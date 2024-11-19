@@ -1,5 +1,5 @@
 # Project Proposal
-I will make a game
+I will make a 'bullet hell game'
 
 ## Needs To Have
 - 1
