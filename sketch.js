@@ -6,8 +6,10 @@
 // - describe what you did to take this project "above and beyond"
 
 let canvas;
+let font;
 
 let hitboxArray = [];
+let testHitbox;
 
 let playerX = 200;
 let playerY = 200;
@@ -15,25 +17,49 @@ const DEFAULT_PLAYER_MOVESPEED = 3;
 const SHIFT_PLAYER_MOVESPEED = 1;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
 
-//htibox class 
-class Hitbox {
-  constructor(x1,y1,x2,y2,type) {
-    this.x1 = x1;
-    this.y1 = y1;
-    this.x2 = x2;
-    this.y2 = y2;
+//classes for hitboxes, each one has different behaviour but similar properties such as speed, size
+//////////////////////////////////////////////////////////////////////////////////////////////
+//default circle hitbox (hitbox, not image) that moves straight at a set speed
+class StandardCircularHitbox {
+  constructor(x,y,direction,speed,radius,image,type,target) {
+    this.x = x;
+    this.y = y;
+    this.direction = direction;
+    this.speed = speed;
+    this.radius = radius;
+    this.image = image;
     this.type = type;
+    this.target = target;
   }
   draw() {
     fill(255,0,0,100);
     noStroke();
-    square(this.x1,this.y1,25);
+    circle(this.x,this.y,25);
+  }
+  checkForCollision() {
+    //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
+    for (let hitbox of hitboxArray) {
+      if (hitbox.type === this.target) {
+        console.log('true');
+      }
+    }
+  }
+  move() {
+    //
+    this.x += this.speed * Math.cos(this.direction * Math.PI / 180);
+    this.y += this.speed * Math.sin(this.direction * Math.PI / 180);
+    this.direction += 2;
   }
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
 function setup() {
+  testHitbox = new StandardCircularHitbox(300,300,360,5,0,0,0);
+  hitboxArray.push(testHitbox);
+  font = loadFont('/fonts/verdana.ttf');
   canvas = createCanvas(windowHeight/3*4, windowHeight);
-  //shake left and right when bomb's explosion 'ticks'
   canvas.position((windowWidth-width)/2,0);
   frameRate(60);
 }
@@ -65,15 +91,21 @@ function checkInput() {
 
 function draw() {
   background(220);
+  fill(220);
+  rect(40,20,width/2+100,height-40);
+  fill('deeppink');
+  textFont(font);
+  textSize(20);
+  text('qwertyuiop 1234567890', width/2+150, 40);
   checkInput();
   square(playerX,playerY,5);
-  // if (frameCount % 30 === 0) {
-  //   let x1 = random(0,width);
-  //   let y1 = random(0,height);
-  //   let hitbox = new Hitbox(x1,y1,x1+0.1,y1+1,'none');
-  //   hitboxArray.push(hitbox);
-  // }
-  // for (let item of hitboxArray) {
-  //   item.draw();
+  for (let hitbox of hitboxArray) {
+    console.log('hitbox');
+    hitbox.move();
+    hitbox.draw();
+  }
+  // if (frameCount % 120) {
+  //   let testHitbox = new StandardCircularHitbox(random(100,400),360,5,0,0,0);
+  //   hitboxArray.push(testHitbox);
   // }
 }
