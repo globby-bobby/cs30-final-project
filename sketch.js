@@ -16,7 +16,7 @@ let playerX = 200;
 let playerY = 200;
 const DEFAULT_PLAYER_MOVESPEED = 3;
 const SHIFT_PLAYER_MOVESPEED = 1.5;
-const GRAZE_RANGE_MULTIPLIER = 2;
+const GRAZE_RANGE_MULTIPLIER = 25;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
 
 //classes for hitboxes, each one has different behaviour but similar properties such as speed, size
@@ -32,7 +32,7 @@ class StandardCircularHitbox {
     this.image = image;
     this.type = type;
     this.target = target;
-    this.grazeRange = radius * GRAZE_RANGE_MULTIPLIER;
+    this.grazeRange = radius + GRAZE_RANGE_MULTIPLIER;
   }
   draw() {
     fill(255,0,0,50);
@@ -45,17 +45,17 @@ class StandardCircularHitbox {
   checkForCollision() {
     //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
     //console.log(dist(playerX,playerY,this.x,this.y) - this.radius/2);
-    if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= 7) {
+    if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= 5) {
       console.log('true');
     }
-    else if (dist(playerX,playerY,this.x,this.y) - this.grazeRange/2 <= 10) {
+    else if (dist(playerX,playerY,this.x,this.y) - this.grazeRange/2 <= 5 && this.grazeRange !== 0) {
+      this.grazeRange = 0
       console.log('graze');
     }
   }
   move() {
     this.x += this.speed * Math.cos(this.direction * Math.PI / 180);
     this.y += this.speed * Math.sin(this.direction * Math.PI / 180);
-    //this.direction += 5;
   }
 }
 
@@ -63,7 +63,7 @@ class StandardCircularHitbox {
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 function setup() {
-  testHitbox = new StandardCircularHitbox(300,300,360,0,25,0,0);
+  testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
   hitboxArray.push(testHitbox);
   font = loadFont('/fonts/verdana.ttf');
   canvas = createCanvas(windowHeight/3*4, windowHeight);
@@ -123,8 +123,8 @@ function draw() {
     hitbox.checkForCollision();
     hitbox.draw();
   }
-  // if (frameCount % 120) {
-  //   let testHitbox = new StandardCircularHitbox(random(100,400),360,5,0,0,0);
-  //   hitboxArray.push(testHitbox);
-  // }
+  if (frameCount % 60 === 0) {
+    let testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
+    hitboxArray.push(testHitbox);
+  }
 }

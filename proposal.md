@@ -7,11 +7,12 @@ I could try to remake one of the games, or do my own take on it (I will decide t
 - 2 - More than one 'stage'
 - 3 - Player that can shoot bullets at enemies
 - 4 - Menu screen, results screen
+- 5 - Proper font, artwork, sound effects
 
 ## Nice To Have
-- 1 - Swag
-- 2 - Proper font, artwork, sound effects
+- 1 - Satisfactory level of polish
+- 2 - 
 - 3 - Extra things from Touhou games
-- 4 - Story
+- 4 - General story the game follows
 - 5 - Extra difficulties
 - 6 - 
