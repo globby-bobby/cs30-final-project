@@ -9,6 +9,7 @@ let canvas;
 let font;
 
 let hitboxArray = [];
+let pickupArray = [];
 let testHitbox;
 
 let spawnpos = 0;
@@ -18,6 +19,40 @@ const DEFAULT_PLAYER_MOVESPEED = 3;
 const SHIFT_PLAYER_MOVESPEED = 1.5;
 const GRAZE_RANGE_MULTIPLIER = 25;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
+//classes for pickups that the player can touch to power up
+//////////////////////////////////////////////////////////////////////////////////////////////
+//temporary class
+
+class StandardPlayerPickup {
+  constructor(x,y,speed,type) {
+    this.x = x;
+    this.y = y;
+    this.speed = speed;
+    this.type = type;
+  }
+  draw() {
+    fill(255,0,0);
+    noStroke();
+    if (this.type !== 'none') {
+      square(this.x,this.y,12);
+    }
+  }
+  checkForCollision() {
+    //for every pickup in pickupArray, check if the pickup is close enough for player to touch
+    //all hitboxes are technically circles but i literally don't care because you don't notice in gameplay
+    if (dist(playerX,playerY,this.x,this.y) - 8 <= 5) {
+      //turn into useless invisible object untill offscreen, which will then be deleted
+      this.type = 'none';
+    }
+  }
+  move() {
+    //pickups can only move down
+    this.y += this.speed/10;
+  }
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 //classes for hitboxes, each one has different behaviour but similar properties such as speed, size
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,7 +84,7 @@ class StandardCircularHitbox {
       console.log('true');
     }
     else if (dist(playerX,playerY,this.x,this.y) - this.grazeRange/2 <= 5 && this.grazeRange !== 0) {
-      this.grazeRange = 0
+      this.grazeRange = 0;
       console.log('graze');
     }
   }
@@ -63,8 +98,10 @@ class StandardCircularHitbox {
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 function setup() {
-  testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
+  testHitbox = new StandardCircularHitbox(300,300,360,0,15,0,0);
+  testPickup = new StandardPlayerPickup(width/2,0,5,'type');
   hitboxArray.push(testHitbox);
+  pickupArray.push(testPickup);
   font = loadFont('/fonts/verdana.ttf');
   canvas = createCanvas(windowHeight/3*4, windowHeight);
   canvas.position((windowWidth-width)/2,0);
@@ -98,14 +135,15 @@ function checkInput() {
 
 function draw() {
   background(220);
-  fill(220);
-  rect(40,20,width/2+100,height-40);
   fill('deeppink');
   textFont(font);
   textSize(20);
+  stroke(0);
+  fill(220);
+  rect(40,20,width/2+100,height-40);
+  noStroke();
   text('qwertyuiop 1234567890', width/2+150, 40);
   checkInput();
-  square(playerX,playerY,5);
   // if (frameCount % 30 === 0) {
   //   spawnpos += 20;
   //   testHitbox = new StandardCircularHitbox(spawnpos,0,90,3,20,0,0);
@@ -123,8 +161,13 @@ function draw() {
     hitbox.checkForCollision();
     hitbox.draw();
   }
-  if (frameCount % 60 === 0) {
-    let testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
-    hitboxArray.push(testHitbox);
+  for (let pickup of pickupArray) {
+    pickup.move();
+    pickup.checkForCollision();
+    pickup.draw();
   }
+  square(playerX,playerY,5);
+  // if (frameCount % 60 === 0) {
+  //   let testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
+  //   hitboxArray.push(testHitbox);
 }
