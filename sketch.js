@@ -12,6 +12,8 @@ let hitboxArray = [];
 let pickupArray = [];
 let testHitbox;
 
+let stage = 0;
+
 let spawnpos = 0;
 let playerX = 200;
 let playerY = 200;
@@ -19,6 +21,9 @@ const DEFAULT_PLAYER_MOVESPEED = 3;
 const SHIFT_PLAYER_MOVESPEED = 1.5;
 const GRAZE_RANGE_MULTIPLIER = 25;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
+
+let backgroundScreenBuffer;
+
 //classes for pickups that the player can touch to power up
 //////////////////////////////////////////////////////////////////////////////////////////////
 //temporary class
@@ -100,12 +105,16 @@ class StandardCircularHitbox {
 function setup() {
   testHitbox = new StandardCircularHitbox(300,300,360,0,15,0,0);
   testPickup = new StandardPlayerPickup(width/2,0,5,'type');
+
   hitboxArray.push(testHitbox);
   pickupArray.push(testPickup);
   font = loadFont('/fonts/verdana.ttf');
-  canvas = createCanvas(windowHeight/3*4, windowHeight);
+  canvas = createCanvas(windowHeight/3*4, windowHeight, WEBGL);
   canvas.position((windowWidth-width)/2,0);
   frameRate(60);
+
+  backgroundScreenBuffer = createFramebuffer();
+  camera(width/2,height/2,800,0,0,0);
 }
 
 function checkInput() {
@@ -134,13 +143,14 @@ function checkInput() {
 }
 
 function draw() {
+  orbitControl();
   background(220);
   fill('deeppink');
   textFont(font);
   textSize(20);
   stroke(0);
   fill(220);
-  rect(40,20,width/2+100,height-40);
+  rect(20,20,height-80);
   noStroke();
   text('qwertyuiop 1234567890', width/2+150, 40);
   checkInput();
@@ -170,4 +180,16 @@ function draw() {
   // if (frameCount % 60 === 0) {
   //   let testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
   //   hitboxArray.push(testHitbox);
+  drawBackgroundBuffer();
+}
+
+function drawBackgroundBuffer() {
+  backgroundScreenBuffer.begin();
+  clear();
+  fill(255);
+  rect(0,0,500,500);
+  torus(20);
+  lights();
+  backgroundScreenBuffer.end();
+  image(backgroundScreenBuffer, 0, 0, 500, 500);
 }
