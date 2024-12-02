@@ -114,7 +114,7 @@ function setup() {
   frameRate(60);
 
   backgroundScreenBuffer = createFramebuffer();
-  camera(width/2,height/2,800,0,0,0);
+  //camera(width/2,height/2,800,0,0,0);
 }
 
 function checkInput() {
@@ -145,11 +145,12 @@ function checkInput() {
 function draw() {
   orbitControl();
   background(220);
+  drawBackgroundBuffer();
   fill('deeppink');
   textFont(font);
   textSize(20);
   stroke(0);
-  fill(220);
+  noFill();
   rect(20,20,height-80);
   noStroke();
   text('qwertyuiop 1234567890', width/2+150, 40);
@@ -177,10 +178,10 @@ function draw() {
     pickup.draw();
   }
   square(playerX,playerY,5);
-  // if (frameCount % 60 === 0) {
-  //   let testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
-  //   hitboxArray.push(testHitbox);
-  drawBackgroundBuffer();
+  if (frameCount % 60 === 0) {
+    let testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
+    hitboxArray.push(testHitbox);
+  }
 }
 
 function drawBackgroundBuffer() {
