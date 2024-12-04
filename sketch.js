@@ -5,6 +5,8 @@
 // Extra for Experts:
 // - describe what you did to take this project "above and beyond"
 
+let drawPictures = true;
+
 let canvas;
 let font;
 
@@ -12,15 +14,22 @@ let hitboxArray = [];
 let pickupArray = [];
 let testHitbox;
 
+const MAX_HITBOX_COUNT = 3;
+
 let stage = 0;
+let state = 'game';
+let isPlayerMovable = true;
 
 let spawnpos = 0;
-let playerX = 200;
-let playerY = 200;
+let playerX = 0;
+let playerY = 0;
 const DEFAULT_PLAYER_MOVESPEED = 3;
 const SHIFT_PLAYER_MOVESPEED = 1.5;
 const GRAZE_RANGE_MULTIPLIER = 25;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
+
+//one at front is hidden to show zeroes ahead of actual number
+let score = 1000000000;
 
 let backgroundScreenBuffer;
 
@@ -44,7 +53,7 @@ class StandardPlayerPickup {
   }
   checkForCollision() {
     //for every pickup in pickupArray, check if the pickup is close enough for player to touch
-    //all hitboxes are technically circles but i literally don't care because you don't notice in gameplay
+    //all hitboxes are technically circles but it shouldn't matter because it's not very noticable
     if (dist(playerX,playerY,this.x,this.y) - 8 <= 5) {
       //turn into useless invisible object untill offscreen, which will then be deleted
       this.type = 'none';
@@ -75,6 +84,10 @@ class StandardCircularHitbox {
     this.grazeRange = radius + GRAZE_RANGE_MULTIPLIER;
   }
   draw() {
+    if (hitboxArray.length >= MAX_HITBOX_COUNT) {
+      console.log(hitboxArray.length);
+      hitboxArray.pop();
+    }
     fill(255,0,0,50);
     noStroke();
     circle(this.x,this.y,this.grazeRange);
@@ -119,26 +132,29 @@ function setup() {
 
 function checkInput() {
   if (keyIsPressed) {
-    //slow down player movement if shift is held
-    if (keyIsDown(SHIFT)) {
-      playerMoveSpeed = SHIFT_PLAYER_MOVESPEED;
+    if (isPlayerMovable) {
+      //movement/shooting options for player if player is able to move
+      if (keyIsDown(SHIFT)) {
+        //slow down player movement if shift is held
+        playerMoveSpeed = SHIFT_PLAYER_MOVESPEED;
+      }
+      else {
+        playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
+      }
+      //arrow key movement
+      if (keyIsDown(RIGHT_ARROW)) {
+        playerX += playerMoveSpeed;
+      };
+      if (keyIsDown(LEFT_ARROW)) {
+        playerX -= playerMoveSpeed;
+      };
+      if (keyIsDown(UP_ARROW)) {
+        playerY -= playerMoveSpeed;
+      };
+      if (keyIsDown(DOWN_ARROW)) {
+        playerY += playerMoveSpeed;
+      };
     }
-    else {
-      playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
-    }
-    //move player with arrow keys
-    if (keyIsDown(RIGHT_ARROW)) {
-      playerX += playerMoveSpeed;
-    };
-    if (keyIsDown(LEFT_ARROW)) {
-      playerX -= playerMoveSpeed;
-    };
-    if (keyIsDown(UP_ARROW)) {
-      playerY -= playerMoveSpeed;
-    };
-    if (keyIsDown(DOWN_ARROW)) {
-      playerY += playerMoveSpeed;
-    };
   }
 }
 
