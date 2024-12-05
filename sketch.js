@@ -193,11 +193,15 @@ function draw() {
     pickup.checkForCollision();
     pickup.draw();
   }
-  square(playerX,playerY,5);
+  drawPlayer();
   if (frameCount % 60 === 0) {
     let testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
     hitboxArray.push(testHitbox);
   }
+}
+
+function drawPlayer() {
+  square(playerX,playerY,5);
 }
 
 function drawBackgroundBuffer() {
