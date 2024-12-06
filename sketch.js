@@ -6,6 +6,7 @@
 // - describe what you did to take this project "above and beyond"
 
 let drawPictures = true;
+let drawHitboxes = true;
 
 let canvas;
 let font;
@@ -14,7 +15,7 @@ let hitboxArray = [];
 let pickupArray = [];
 let testHitbox;
 
-const MAX_HITBOX_COUNT = 3;
+const MAX_HITBOX_COUNT = 1000;
 
 let stage = 0;
 let state = 'game';
@@ -84,29 +85,27 @@ class StandardCircularHitbox {
     this.grazeRange = radius + GRAZE_RANGE_MULTIPLIER;
   }
   draw() {
-    if (hitboxArray.length >= MAX_HITBOX_COUNT) {
-      console.log(hitboxArray.length);
-      hitboxArray.pop();
-    }
-    fill(255,0,0,50);
+    //fill(255,0,0,50);
     noStroke();
-    circle(this.x,this.y,this.grazeRange);
+    //circle(this.x,this.y,this.grazeRange);
     fill(255,0,0,100);
     noStroke();
     circle(this.x,this.y,this.radius);
   }
   checkForCollision() {
     //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
-    //console.log(dist(playerX,playerY,this.x,this.y) - this.radius/2);
+    //player hit inner hitbox causing them to take damage
     if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= 5) {
       console.log('true');
     }
+    //player 'grazed' the outer hitbox causing a sound to play and make hitbox untouchable as graze only happens once per hitbox
     else if (dist(playerX,playerY,this.x,this.y) - this.grazeRange/2 <= 5 && this.grazeRange !== 0) {
       this.grazeRange = 0;
-      console.log('graze');
+      //console.log('graze');
     }
   }
   move() {
+    //move in direction in degrees
     this.x += this.speed * Math.cos(this.direction * Math.PI / 180);
     this.y += this.speed * Math.sin(this.direction * Math.PI / 180);
   }
@@ -158,6 +157,17 @@ function checkInput() {
   }
 }
 
+function createHitbox(hitbox,x,y,direction,speed,radius,image,type,target) {
+  let newHitbox;
+  if (hitbox === 0) {
+    newHitbox = new StandardCircularHitbox(x,y,direction,speed,radius,image,type,target);
+  }
+  if (hitboxArray.length >= MAX_HITBOX_COUNT) {
+    hitboxArray.shift();
+  }
+  hitboxArray.push(newHitbox);
+}
+
 function draw() {
   orbitControl();
   background(220);
@@ -183,25 +193,37 @@ function draw() {
   //     spawnpos = 0;
   //   }
   // }
+  if (state === 'game') {
+    updateObjects();
+    drawPlayer();
+  }
+  if (frameCount % 1 === 0) {
+    createHitbox(0,0,0,random(-360,360),1,15,0,0);
+    createHitbox(0,0,0,random(-360,360),1,15,0,0);
+  }
+}
+
+function updateObjects() {
   for (let hitbox of hitboxArray) {
     hitbox.move();
     hitbox.checkForCollision();
-    hitbox.draw();
+    if (drawHitboxes) {
+      hitbox.draw();
+    }
   }
   for (let pickup of pickupArray) {
     pickup.move();
     pickup.checkForCollision();
-    pickup.draw();
-  }
-  drawPlayer();
-  if (frameCount % 60 === 0) {
-    let testHitbox = new StandardCircularHitbox(300,300,360,1,15,0,0);
-    hitboxArray.push(testHitbox);
+    if (drawHitboxes) {
+      pickup.draw();
+    }
   }
 }
 
 function drawPlayer() {
-  square(playerX,playerY,5);
+  if (drawHitboxes) {
+    square(playerX,playerY,5);
+  }
 }
 
 function drawBackgroundBuffer() {
@@ -212,5 +234,5 @@ function drawBackgroundBuffer() {
   torus(20);
   lights();
   backgroundScreenBuffer.end();
-  image(backgroundScreenBuffer, 0, 0, 500, 500);
+  //image(backgroundScreenBuffer, 0, 0, 500, 500);
 }
