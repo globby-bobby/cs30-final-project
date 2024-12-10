@@ -1,0 +1,13 @@
+#First wave of enemies, lasts  X seconds
+-enemies1
+
+-
+-boss1
+
+-
+-enemies2
+
+-
+-boss2
+
+-

@@ -1,0 +1,1 @@
+#R = Reimu, player character, E = enemy

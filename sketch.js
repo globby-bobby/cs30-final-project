@@ -26,10 +26,12 @@ let playerX = 0;
 let playerY = 0;
 const DEFAULT_PLAYER_MOVESPEED = 3;
 const SHIFT_PLAYER_MOVESPEED = 1.5;
+const PLAYER_HITBOX_DIAMETER = 5;
 const GRAZE_RANGE_MULTIPLIER = 25;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
 
 //one at front is hidden to show zeroes ahead of actual number
+//it would be better to do 00000 + score
 let score = 1000000000;
 
 let backgroundScreenBuffer;
@@ -85,9 +87,9 @@ class StandardCircularHitbox {
     this.grazeRange = radius + GRAZE_RANGE_MULTIPLIER;
   }
   draw() {
-    //fill(255,0,0,50);
+    fill(255,0,0,50);
     noStroke();
-    //circle(this.x,this.y,this.grazeRange);
+    circle(this.x,this.y,this.grazeRange);
     fill(255,0,0,100);
     noStroke();
     circle(this.x,this.y,this.radius);
@@ -95,13 +97,13 @@ class StandardCircularHitbox {
   checkForCollision() {
     //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
     //player hit inner hitbox causing them to take damage
-    if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= 5) {
+    if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= PLAYER_HITBOX_DIAMETER/2) {
       console.log('true');
     }
-    //player 'grazed' the outer hitbox causing a sound to play and make hitbox untouchable as graze only happens once per hitbox
-    else if (dist(playerX,playerY,this.x,this.y) - this.grazeRange/2 <= 5 && this.grazeRange !== 0) {
+    //player 'grazed' the outer hitbox causing a sound to play and make graze hitbox untouchable as graze only triggers once per hitbox
+    else if (dist(playerX,playerY,this.x,this.y) - this.grazeRange/2 <= PLAYER_HITBOX_DIAMETER/2 && this.grazeRange !== 0) {
       this.grazeRange = 0;
-      //console.log('graze');
+      console.log('graze');
     }
   }
   move() {
@@ -179,7 +181,7 @@ function draw() {
   noFill();
   rect(20,20,height-80);
   noStroke();
-  text('qwertyuiop 1234567890', width/2+150, 40);
+  text('qwertyuiop 1234567890', 0, 0);
   checkInput();
   // if (frameCount % 30 === 0) {
   //   spawnpos += 20;
@@ -197,9 +199,8 @@ function draw() {
     updateObjects();
     drawPlayer();
   }
-  if (frameCount % 1 === 0) {
-    createHitbox(0,0,0,random(-360,360),1,15,0,0);
-    createHitbox(0,0,0,random(-360,360),1,15,0,0);
+  if (frameCount % 30 === 0) {
+    createHitbox(0,0,0,0,0,15,0,0);
   }
 }
 
@@ -222,7 +223,7 @@ function updateObjects() {
 
 function drawPlayer() {
   if (drawHitboxes) {
-    square(playerX,playerY,5);
+    circle(playerX,playerY,5);
   }
 }
 
