@@ -1,0 +1,26 @@
+power caps at 128 top of screen makes all powers fly towards u
+Full Power Mode!!
+full power mode turns all bullets to star powers
+power items worth more at top if yellow, white are no longer top value
+score is 9 digits long
+after spellcard bullets turn to star items which are multiplied by graze value
+star items add score
+graze and blue thing reset at stage start
+invuln during bomb and can't graze until few secs before bomb wears off
+star items worth nothing while bomb is active
+patterns and boss movements are random
+
+stage 4 128 power 2225 graze 211 point item (blue thing)
+touhou en patch font is monospaced
+Stage Clear
+
+Stage * 1000 = 4000
+Power *  100 = 12800
+Graze *   10 = 22250
+    * Point Item 211
+	
+Normal Rank    * 1.0
+Total     =  8239550
+
+3 bombs after dying and invuln
+on stage 6 1m per bomb 3m per life75
