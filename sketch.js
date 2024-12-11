@@ -24,14 +24,20 @@ let isPlayerMovable = true;
 let spawnpos = 0;
 let playerX = 0;
 let playerY = 0;
-const DEFAULT_PLAYER_MOVESPEED = 3;
-const SHIFT_PLAYER_MOVESPEED = 1.5;
+const DEFAULT_PLAYER_MOVESPEED = 4;
+const SHIFT_PLAYER_MOVESPEED = 2;
 const PLAYER_HITBOX_DIAMETER = 5;
 const GRAZE_RANGE_MULTIPLIER = 25;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
 
+//the three numbers shown on side of gameplay screen in order from top to bottom
+let powerScore = 0;
+let grazeScore = 0;
+let pointScore = 0;
+
 //one at front is hidden to show zeroes ahead of actual number
-//it would be better to do 00000 + score
+//it would be better to do "00000" + score
+let currentScore = 1000000000;
 let score = 1000000000;
 
 let backgroundScreenBuffer;
@@ -73,7 +79,7 @@ class StandardPlayerPickup {
 
 //classes for hitboxes, each one has different behaviour but similar properties such as speed, size
 //////////////////////////////////////////////////////////////////////////////////////////////
-//default circle hitbox (hitbox, not image) that moves straight at a set speed
+//default circle hitbox that moves straight at a set speed
 class StandardCircularHitbox {
   constructor(x,y,direction,speed,radius,image,type,target) {
     this.x = x;
@@ -85,6 +91,7 @@ class StandardCircularHitbox {
     this.type = type;
     this.target = target;
     this.grazeRange = radius + GRAZE_RANGE_MULTIPLIER;
+    this.canGraze = true;
   }
   draw() {
     fill(255,0,0,50);
@@ -100,10 +107,14 @@ class StandardCircularHitbox {
     if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= PLAYER_HITBOX_DIAMETER/2) {
       console.log('true');
     }
-    //player 'grazed' the outer hitbox causing a sound to play and make graze hitbox untouchable as graze only triggers once per hitbox
-    else if (dist(playerX,playerY,this.x,this.y) - this.grazeRange/2 <= PLAYER_HITBOX_DIAMETER/2 && this.grazeRange !== 0) {
-      this.grazeRange = 0;
-      console.log('graze');
+    //player 'grazed' the outer hitbox causing a sound to play and make graze number only increase once as graze only triggers once per hitbox
+    else if (dist(playerX,playerY,this.x,this.y) - this.grazeRange/2 <= PLAYER_HITBOX_DIAMETER/2) {
+      if (this.canGraze) {
+        this.canGraze = false;
+        grazeScore++;
+        console.log('graze');
+      }
+      grazeParticle();
     }
   }
   move() {
@@ -134,6 +145,7 @@ function setup() {
 function checkInput() {
   if (keyIsPressed) {
     if (isPlayerMovable) {
+      let playerMoveDirection = -1;
       //movement/shooting options for player if player is able to move
       if (keyIsDown(SHIFT)) {
         //slow down player movement if shift is held
@@ -142,19 +154,40 @@ function checkInput() {
       else {
         playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
       }
+
+      if (keyIsDown(90)) {
+        console.log('s');
+      }
+
       //arrow key movement
-      if (keyIsDown(RIGHT_ARROW)) {
-        playerX += playerMoveSpeed;
-      };
-      if (keyIsDown(LEFT_ARROW)) {
-        playerX -= playerMoveSpeed;
-      };
-      if (keyIsDown(UP_ARROW)) {
-        playerY -= playerMoveSpeed;
-      };
-      if (keyIsDown(DOWN_ARROW)) {
-        playerY += playerMoveSpeed;
-      };
+      if (keyIsDown(UP_ARROW) && !keyIsDown(LEFT_ARROW) && !keyIsDown(RIGHT_ARROW)) {
+        playerMoveDirection = 270;
+      }
+      else if (keyIsDown(DOWN_ARROW) && !keyIsDown(LEFT_ARROW) && !keyIsDown(RIGHT_ARROW)) {
+        playerMoveDirection = 90;
+      }
+      else if (keyIsDown(RIGHT_ARROW)) {
+        playerMoveDirection = 0;
+        if (keyIsDown(UP_ARROW)) {
+          playerMoveDirection = 315;
+        }
+        else if (keyIsDown(DOWN_ARROW)) {
+          playerMoveDirection = 45;
+        }
+      }
+      else if (keyIsDown(LEFT_ARROW)) {
+        playerMoveDirection = 180; 
+        if (keyIsDown(UP_ARROW)) {
+          playerMoveDirection = 225;
+        }
+        else if (keyIsDown(DOWN_ARROW)) {
+          playerMoveDirection = 135;
+        }
+      }
+      if (playerMoveDirection !== -1) {
+        playerX += playerMoveSpeed * Math.cos(playerMoveDirection * Math.PI / 180);
+        playerY += playerMoveSpeed * Math.sin(playerMoveDirection * Math.PI / 180);
+      }  
     }
   }
 }
@@ -200,7 +233,7 @@ function draw() {
     drawPlayer();
   }
   if (frameCount % 30 === 0) {
-    createHitbox(0,0,0,0,0,15,0,0);
+    createHitbox(0,0,0,0,0,8,0,0);
   }
 }
 
@@ -219,6 +252,9 @@ function updateObjects() {
       pickup.draw();
     }
   }
+}
+
+function grazeParticle() {
 }
 
 function drawPlayer() {
