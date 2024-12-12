@@ -24,6 +24,7 @@ let isPlayerMovable = true;
 let spawnpos = 0;
 let playerX = 0;
 let playerY = 0;
+let bringPickupsToPlayer = true;
 const DEFAULT_PLAYER_MOVESPEED = 4;
 const SHIFT_PLAYER_MOVESPEED = 2;
 const PLAYER_HITBOX_DIAMETER = 5;
@@ -47,30 +48,36 @@ let backgroundScreenBuffer;
 //temporary class
 
 class StandardPlayerPickup {
-  constructor(x,y,speed,type) {
+  constructor(x,y,speed,radius,type) {
     this.x = x;
     this.y = y;
     this.speed = speed;
+    this.radius = radius;
     this.type = type;
   }
   draw() {
-    fill(255,0,0);
+    fill(255,0,255);
     noStroke();
     if (this.type !== 'none') {
-      square(this.x,this.y,12);
+      circle(this.x,this.y,this.radius*2);
     }
   }
   checkForCollision() {
     //for every pickup in pickupArray, check if the pickup is close enough for player to touch
     //all hitboxes are technically circles but it shouldn't matter because it's not very noticable
-    if (dist(playerX,playerY,this.x,this.y) - 8 <= 5) {
+    if (dist(playerX,playerY,this.x,this.y) - this.radius <= PLAYER_HITBOX_DIAMETER/2) {
       //turn into useless invisible object untill offscreen, which will then be deleted
       this.type = 'none';
     }
   }
   move() {
-    //pickups can only move down
-    this.y += this.speed/10;
+    //pickups move down by default but will fly towards player under certain circumstances
+    if (bringPickupsToPlayer) {
+      //this.x = this.x-playerX-this.speed;
+    }
+    else {
+      this.y += this.speed/10;
+    }
   }
 
 }
@@ -129,10 +136,12 @@ class StandardCircularHitbox {
 
 function setup() {
   testHitbox = new StandardCircularHitbox(300,300,360,0,15,0,0);
-  testPickup = new StandardPlayerPickup(width/2,0,5,'type');
+  testPickup = new StandardPlayerPickup(width/2,-100,5,8,'type');
+  //testPickup2 = new StandardPlayerPickup(width/2-123,0,5,12,'type');
 
   hitboxArray.push(testHitbox);
   pickupArray.push(testPickup);
+  //pickupArray.push(testPickup2);
   font = loadFont('/fonts/verdana.ttf');
   canvas = createCanvas(windowHeight/3*4, windowHeight, WEBGL);
   canvas.position((windowWidth-width)/2,0);
@@ -259,6 +268,7 @@ function grazeParticle() {
 
 function drawPlayer() {
   if (drawHitboxes) {
+    fill(255,0,0);
     circle(playerX,playerY,5);
   }
 }
