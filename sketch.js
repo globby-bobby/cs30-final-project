@@ -16,6 +16,7 @@ let pickupArray = [];
 let testHitbox;
 
 const MAX_HITBOX_COUNT = 1000;
+const MAX_PICKUP_COUNT = 200;
 
 let stage = 0;
 let state = 'game';
@@ -73,7 +74,11 @@ class StandardPlayerPickup {
   move() {
     //pickups move down by default but will fly towards player under certain circumstances
     if (bringPickupsToPlayer) {
-      //this.x = this.x-playerX-this.speed;
+      angleMode(DEGREES);
+      //point towards player
+      this.direction = atan2(playerY-this.y,playerX-this.x);
+      this.x += this.speed*0.7 * Math.cos(this.direction * Math.PI / 180);
+      this.y += this.speed*0.7 * Math.sin(this.direction * Math.PI / 180);
     }
     else {
       this.y += this.speed/10;
@@ -165,7 +170,7 @@ function checkInput() {
       }
 
       if (keyIsDown(90)) {
-        console.log('s');
+        //console.log('s');
       }
 
       //arrow key movement
@@ -211,12 +216,31 @@ function createHitbox(hitbox,x,y,direction,speed,radius,image,type,target) {
   }
   hitboxArray.push(newHitbox);
 }
+function createPickup(pickup,x,y,speed,radius,type) {
+  let newPickup;
+  if (pickup === 0) {
+    newPickup = new StandardPlayerPickup(x,y,speed,radius,type);
+    pickupArray.push(newPickup);
+  }
+  if (pickupArray.length >= MAX_PICKUP_COUNT) {
+    pickupArray.shift();
+  }
+  pickupArray.push(newPickup);
+}
 
 function draw() {
   orbitControl();
   background(220);
   drawBackgroundBuffer();
   fill('deeppink');
+
+  if (frameCount % 5 === 0) {
+    createPickup(0,random(-350,350),-450,random(3,15),8,'type');
+  }
+  // if (frameCount % 120 === 0) {
+  //   bringPickupsToPlayer = !bringPickupsToPlayer;
+  // }
+
   textFont(font);
   textSize(20);
   stroke(0);
