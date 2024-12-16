@@ -25,7 +25,7 @@ let isPlayerMovable = true;
 let spawnpos = 0;
 let playerX = 0;
 let playerY = 0;
-let bringPickupsToPlayer = true;
+let bringPickupsToPlayer = false;
 const DEFAULT_PLAYER_MOVESPEED = 4;
 const SHIFT_PLAYER_MOVESPEED = 2;
 const PLAYER_HITBOX_DIAMETER = 5;
@@ -77,8 +77,9 @@ class StandardPlayerPickup {
       angleMode(DEGREES);
       //point towards player
       this.direction = atan2(playerY-this.y,playerX-this.x);
-      this.x += this.speed*0.7 * Math.cos(this.direction * Math.PI / 180);
-      this.y += this.speed*0.7 * Math.sin(this.direction * Math.PI / 180);
+      this.x += this.speed/10 * Math.cos(this.direction * Math.PI / 180);
+      this.y += this.speed/10 * Math.sin(this.direction * Math.PI / 180);
+      this.speed += 0.3;
     }
     else {
       this.y += this.speed/10;
@@ -234,11 +235,8 @@ function draw() {
   drawBackgroundBuffer();
   fill('deeppink');
 
-  if (frameCount % 5 === 0) {
-    createPickup(0,random(-350,350),-450,random(3,15),8,'type');
-  }
-  // if (frameCount % 120 === 0) {
-  //   bringPickupsToPlayer = !bringPickupsToPlayer;
+  // if (frameCount % 5 === 0) {
+  //   createPickup(0,random(-350,350),-450,5,8,'type');
   // }
 
   textFont(font);
