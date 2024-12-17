@@ -30,6 +30,7 @@ const DEFAULT_PLAYER_MOVESPEED = 4;
 const SHIFT_PLAYER_MOVESPEED = 2;
 const PLAYER_HITBOX_DIAMETER = 5;
 const GRAZE_RANGE_MULTIPLIER = 25;
+const PICKUP_MAGNET_DISTANCE = 60;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
 
 //the three numbers shown on side of gameplay screen in order from top to bottom
@@ -55,6 +56,7 @@ class StandardPlayerPickup {
     this.speed = speed;
     this.radius = radius;
     this.type = type;
+    this.originalSpeed = speed;
   }
   draw() {
     fill(255,0,255);
@@ -73,7 +75,10 @@ class StandardPlayerPickup {
   }
   move() {
     //pickups move down by default but will fly towards player under certain circumstances
-    if (bringPickupsToPlayer) {
+    if (bringPickupsToPlayer || dist(playerX,playerY,this.x,this.y) < PICKUP_MAGNET_DISTANCE) {
+      if (this.speed === this.originalSpeed) {
+        this.speed = 35;
+      }
       angleMode(DEGREES);
       //point towards player
       this.direction = atan2(playerY-this.y,playerX-this.x);
@@ -82,6 +87,7 @@ class StandardPlayerPickup {
       this.speed += 0.3;
     }
     else {
+      this.speed = this.originalSpeed;
       this.y += this.speed/10;
     }
   }
@@ -142,7 +148,7 @@ class StandardCircularHitbox {
 
 function setup() {
   testHitbox = new StandardCircularHitbox(300,300,360,0,15,0,0);
-  testPickup = new StandardPlayerPickup(width/2,-100,5,8,'type');
+  testPickup = new StandardPlayerPickup(width/2,-100,15,8,'type');
   //testPickup2 = new StandardPlayerPickup(width/2-123,0,5,12,'type');
 
   hitboxArray.push(testHitbox);
@@ -171,7 +177,8 @@ function checkInput() {
       }
 
       if (keyIsDown(90)) {
-        //console.log('s');
+        console.log('s');
+        bringPickupsToPlayer = !bringPickupsToPlayer;
       }
 
       //arrow key movement
@@ -235,9 +242,9 @@ function draw() {
   drawBackgroundBuffer();
   fill('deeppink');
 
-  // if (frameCount % 5 === 0) {
-  //   createPickup(0,random(-350,350),-450,5,8,'type');
-  // }
+  if (frameCount % 5 === 0) {
+    createPickup(0,random(-350,350),-450,5,8,'type');
+  }
 
   textFont(font);
   textSize(20);
