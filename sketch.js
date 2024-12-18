@@ -19,7 +19,8 @@ const MAX_HITBOX_COUNT = 1000;
 const MAX_PICKUP_COUNT = 200;
 
 let stage = 0;
-let state = 'game';
+let state = 'menu';
+let betweenStages = false;
 let isPlayerMovable = true;
 
 let spawnpos = 0;
@@ -33,6 +34,10 @@ const GRAZE_RANGE_MULTIPLIER = 25;
 const PICKUP_MAGNET_DISTANCE = 60;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
 
+//text files
+let textFileStage1;
+let dialogueFileStage1;
+
 //the three numbers shown on side of gameplay screen in order from top to bottom
 let powerScore = 0;
 let grazeScore = 0;
@@ -42,6 +47,11 @@ let pointScore = 0;
 //it would be better to do "00000" + score
 let currentScore = 1000000000;
 let score = 1000000000;
+
+//how many seconds the game has been running for
+let seconds = 0;
+//how many seconds the stage has been running for, resets on stage start (number will not increase if below zero)
+let stageSeconds = -1;
 
 let backgroundScreenBuffer;
 
@@ -77,14 +87,14 @@ class StandardPlayerPickup {
     //pickups move down by default but will fly towards player under certain circumstances
     if (bringPickupsToPlayer || dist(playerX,playerY,this.x,this.y) < PICKUP_MAGNET_DISTANCE) {
       if (this.speed === this.originalSpeed) {
-        this.speed = 35;
+        this.speed = 55;
       }
       angleMode(DEGREES);
       //point towards player
       this.direction = atan2(playerY-this.y,playerX-this.x);
       this.x += this.speed/10 * Math.cos(this.direction * Math.PI / 180);
       this.y += this.speed/10 * Math.sin(this.direction * Math.PI / 180);
-      this.speed += 0.3;
+      this.speed += 1;
     }
     else {
       this.speed = this.originalSpeed;
@@ -146,6 +156,10 @@ class StandardCircularHitbox {
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+function preload() {
+  //put in setup eventually and show loading screen while text/images/audio load
+}
+
 function setup() {
   testHitbox = new StandardCircularHitbox(300,300,360,0,15,0,0);
   testPickup = new StandardPlayerPickup(width/2,-100,15,8,'type');
@@ -165,7 +179,7 @@ function setup() {
 
 function checkInput() {
   if (keyIsPressed) {
-    if (isPlayerMovable) {
+    if (isPlayerMovable && state === 'game') {
       let playerMoveDirection = -1;
       //movement/shooting options for player if player is able to move
       if (keyIsDown(SHIFT)) {
@@ -219,7 +233,7 @@ function createHitbox(hitbox,x,y,direction,speed,radius,image,type,target) {
   if (hitbox === 0) {
     newHitbox = new StandardCircularHitbox(x,y,direction,speed,radius,image,type,target);
   }
-  if (hitboxArray.length >= MAX_HITBOX_COUNT) {
+  if (hitboxArray.length >= MAX_HITBOX_COUNT || state !== 'game') {
     hitboxArray.shift();
   }
   hitboxArray.push(newHitbox);
@@ -230,7 +244,7 @@ function createPickup(pickup,x,y,speed,radius,type) {
     newPickup = new StandardPlayerPickup(x,y,speed,radius,type);
     pickupArray.push(newPickup);
   }
-  if (pickupArray.length >= MAX_PICKUP_COUNT) {
+  if (pickupArray.length >= MAX_PICKUP_COUNT || state !== 'game') {
     pickupArray.shift();
   }
   pickupArray.push(newPickup);
@@ -243,7 +257,7 @@ function draw() {
   fill('deeppink');
 
   if (frameCount % 5 === 0) {
-    createPickup(0,random(-350,350),-450,5,8,'type');
+    //createPickup(0,random(-350,350),-450,5,8,'type');
   }
 
   textFont(font);
@@ -254,25 +268,38 @@ function draw() {
   noStroke();
   text('qwertyuiop 1234567890', 0, 0);
   checkInput();
-  // if (frameCount % 30 === 0) {
-  //   spawnpos += 20;
-  //   testHitbox = new StandardCircularHitbox(spawnpos,0,90,3,20,0,0);
-  //   hitboxArray.push(testHitbox);
-  //   testHitbox = new StandardCircularHitbox(spawnpos + 120,-60,90,2,20,0,0);
-  //   hitboxArray.push(testHitbox);
-  //   testHitbox = new StandardCircularHitbox(spawnpos + 240,-120,90,4,20,0,0);
-  //   hitboxArray.push(testHitbox);
-  //   if (spawnpos > width) {
-  //     spawnpos = 0;
-  //   }
-  // }
-  if (state === 'game') {
-    updateObjects();
-    drawPlayer();
-  }
+
+  checkFrameCount();
+  runState();
   if (frameCount % 30 === 0) {
     createHitbox(0,0,0,0,0,8,0,0);
   }
+}
+
+function runState() {
+  if (state === 'menu') {
+    playTrack();
+  }
+  if (state === 'game') {
+    updateObjects();
+    drawPlayer();
+    drawStage();
+  }
+}
+
+function checkFrameCount() {
+  //run this every second since game starts
+  if (frameCount % 60) {
+    seconds++;
+    if (stageSeconds >= 0) {
+      stageSeconds++;
+    }
+    if (betweenStages) {
+      //to ensure seconds count always starts at the same time, the game stalls until a second has passed
+      betweenStages = false;
+    }
+  }
+
 }
 
 function updateObjects() {
@@ -292,6 +319,10 @@ function updateObjects() {
   }
 }
 
+function playTrack(track) {
+
+}
+
 function grazeParticle() {
 }
 
@@ -300,6 +331,10 @@ function drawPlayer() {
     fill(255,0,0);
     circle(playerX,playerY,5);
   }
+}
+
+function drawStage() {
+
 }
 
 function drawBackgroundBuffer() {
