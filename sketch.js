@@ -18,7 +18,7 @@ let testHitbox;
 const MAX_HITBOX_COUNT = 1000;
 const MAX_PICKUP_COUNT = 200;
 
-let stage = 0;
+let stage = 1;
 let state = 'game';
 let betweenStages = false;
 let isPlayerMovable = true;
@@ -157,7 +157,7 @@ class StandardCircularHitbox {
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 function preload() {
-  textFileStage1 = loadStrings('/text/stage1.txt/');
+  textFileStage1 = loadStrings('/text/stage1.txt');
   //dialogueFileStage1 = loadStrings();
   //put in setup eventually and show loading screen while text/images/audio load
 }
