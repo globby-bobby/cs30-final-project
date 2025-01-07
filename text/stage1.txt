@@ -1,6 +1,9 @@
-#
-1
-##
-5
+//stage
+stage:2
+//create enemy with a type, time to spawn, position, direction to turn every frame, and speed to move every frame
 newEnemy
-0,0
+type:001
+time:005
+pos:005,005
+dir:-005
+speed:005

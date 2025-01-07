@@ -13,6 +13,7 @@ let font;
 
 let hitboxArray = [];
 let pickupArray = [];
+let currentStageEnemyArray = [];
 let testHitbox;
 
 const MAX_HITBOX_COUNT = 1000;
@@ -51,7 +52,7 @@ let score = 1000000000;
 //how many seconds the game has been running for
 let seconds = 0;
 //how many seconds the stage has been running for, resets on stage start (number will not increase if below zero)
-let stageSeconds = -1;
+let stageSeconds = 0;
 
 let backgroundScreenBuffer;
 
@@ -153,6 +154,34 @@ class StandardCircularHitbox {
   }
 }
 
+//classes for enemies, each one has different behaviour but use a set type for things like sprites
+//////////////////////////////////////////////////////////////////////////////////////////////
+class StandardEnemy {
+  constructor(type,time,position,direction,speed) {
+    this.type = type;
+    this.time = time;
+    this.pos = position;
+    this.dir = direction;
+    this.speed = speed;
+  }
+  draw() {
+    fill(150, 255, 150,50);
+    noStroke();
+    circle(this.x,this.y,PLAYER_HITBOX_DIAMETER);
+  }
+  checkForCollision() {
+    //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
+    //player hit inner hitbox causing them to take damage (cannot graze enemy hitboxes)
+    if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= PLAYER_HITBOX_DIAMETER/2) {
+      console.log('touched enemy');
+    }
+  }
+  move() {
+    //move in direction in degrees
+    this.x += this.speed * Math.cos(this.direction * Math.PI / 180);
+    this.y += this.speed * Math.sin(this.direction * Math.PI / 180);
+  }
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -176,6 +205,7 @@ function setup() {
   frameRate(60);
 
   backgroundScreenBuffer = createFramebuffer();
+  readStageInfo();
   //camera(width/2,height/2,800,0,0,0);
 }
 
@@ -291,10 +321,12 @@ function runState() {
 
 function checkFrameCount() {
   //run this every second since game starts
-  if (frameCount % 60) {
+  if (frameCount % 60 === 1) {
     seconds++;
+    //reset at stage start
     if (stageSeconds >= 0) {
       stageSeconds++;
+      spawnEnemiesEachSecond();
     }
     if (betweenStages) {
       //to ensure seconds count always starts at the same time, the game stalls until a second has passed
@@ -338,6 +370,51 @@ function drawPlayer() {
 
 function drawStage() {
 
+}
+
+function readStageInfo() {
+  let line = 0;
+  if (stage > 0) {
+    textFile = textFileStage1;
+    for (let textLine of textFile) {
+      line++;
+      //check for comments
+      if (textLine.substring(0,2) === "//") {
+        textLine = '';
+      }
+      if (textLine.substring(0,5) === "stage:") {
+        //read and set stage number
+        textLine = textLine.slice(6);
+        stage = int(textLine);
+      }
+      if (textLine === "newEnemy") {
+        //create new enemy with info from text
+        newEnemy(textFile[line+1].slice(-3), textFile[line+2].slice(-3), );
+      }
+
+    }
+  }
+}
+
+function newEnemy(type,time,position,direction,speed) {
+  //add time to spawn in enemy array, every second game will check if the array has the number equal to stage time,
+  //and will spawn every enemy in that array
+  currentStageEnemyArray.push(int(time));
+  console.log(currentStageEnemyArray);
+}
+
+function spawnEnemiesEachSecond() {
+  console.log(stageSeconds);
+  for (let index of currentStageEnemyArray) {
+    if (index === int(stageSeconds)) {
+      console.log("found");
+      for (let enemy of index) {
+        //create enemies contained in index, index is a 'second' of time where enemies are set to spawn at this time
+        let newEnemy = new StandardEnemy(type,time,position,direction,speed);
+      }
+
+    }
+  }
 }
 
 function drawBackgroundBuffer() {
