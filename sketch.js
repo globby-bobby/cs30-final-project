@@ -399,8 +399,17 @@ function readStageInfo() {
 function newEnemy(type,time,position,direction,speed) {
   //add time to spawn in enemy array, every second game will check if the array has the number equal to stage time,
   //and will spawn every enemy in that array
-  currentStageEnemyArray.push(int(time));
-  console.log(currentStageEnemyArray);
+  let timeNumber = int(time);
+  currentStageEnemyArray.push(timeNumber);
+  console.log(currentStageEnemyArray[time]);
+  currentStageEnemyArray[time].push("g");
+  let enemyInfo = {
+    type: type,
+    position: position,
+    direction: direction,
+    speed: speed,
+  };
+  console.log(currentStageEnemyArray[time]);
 }
 
 function spawnEnemiesEachSecond() {
