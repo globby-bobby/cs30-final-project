@@ -4,6 +4,7 @@ stage:2
 newEnemy
 type:001
 time:001
-pos:005,005
-dir:-005
+x:006
+y:005
+dir:005
 speed:005

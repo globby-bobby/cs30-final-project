@@ -389,40 +389,38 @@ function readStageInfo() {
       }
       if (textLine === "newEnemy") {
         //create new enemy with info from text
-        newEnemy(textFile[line+1].slice(-3), textFile[line+2].slice(-3), );
+        newEnemy(textFile[line].slice(-3), textFile[line+1].slice(-3), textFile[line+2].slice(-3), textFile[line+3].slice(-3), textFile[line+4].slice(-3), textFile[line+5].slice(-3));
       }
 
     }
   }
 }
 
-function newEnemy(type,time,position,direction,speed) {
+function newEnemy(type,time,x,y,direction,speed) {
   //add time to spawn in enemy array, every second game will check if the array has the number equal to stage time,
   //and will spawn every enemy in that array
-  let timeNumber = int(time);
-  currentStageEnemyArray.push(timeNumber);
-  console.log(currentStageEnemyArray[time]);
-  currentStageEnemyArray[time].push("g");
+  console.log(speed);
+  time = int(time);
+  currentStageEnemyArray.push(time);
+  //info of enemy
   let enemyInfo = {
-    type: type,
-    position: position,
-    direction: direction,
-    speed: speed,
+    type: int(type),
+    time: int(time),
+    x: int(x),
+    y: int(y),
+    direction: int(direction),
+    speed: int(speed)
   };
-  console.log(currentStageEnemyArray[time]);
+  if (currentStageEnemyArray.includes(time)) {
+    //put enemy in time slot in array
+    currentStageEnemyArray.push(enemyInfo);
+  }
 }
 
 function spawnEnemiesEachSecond() {
   console.log(stageSeconds);
-  for (let index of currentStageEnemyArray) {
-    if (index === int(stageSeconds)) {
-      console.log("found");
-      for (let enemy of index) {
-        //create enemies contained in index, index is a 'second' of time where enemies are set to spawn at this time
-        let newEnemy = new StandardEnemy(type,time,position,direction,speed);
-      }
-
-    }
+  if (currentStageEnemyArray.includes(stageSeconds)) {
+    for (let enemy of currentStageEnemyArray[])
   }
 }
 
