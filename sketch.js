@@ -13,10 +13,11 @@ let font;
 
 let hitboxArray = [];
 let pickupArray = [];
+let enemyArray = [];
 let currentStageEnemyArray = [];
 let testHitbox;
 
-const MAX_HITBOX_COUNT = 1000;
+const MAX_HITBOX_COUNT = 200;
 const MAX_PICKUP_COUNT = 200;
 
 let stage = 1;
@@ -58,7 +59,6 @@ let backgroundScreenBuffer;
 
 //classes for pickups that the player can touch to power up
 //////////////////////////////////////////////////////////////////////////////////////////////
-//temporary class
 
 class StandardPlayerPickup {
   constructor(x,y,speed,radius,type) {
@@ -136,11 +136,13 @@ class StandardCircularHitbox {
     //player hit inner hitbox causing them to take damage
     if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= PLAYER_HITBOX_DIAMETER/2) {
       console.log('true');
+      this.radius = 0.1;
     }
     //player 'grazed' the outer hitbox causing a sound to play and make graze number only increase once as graze only triggers once per hitbox
     else if (dist(playerX,playerY,this.x,this.y) - this.grazeRange/2 <= PLAYER_HITBOX_DIAMETER/2) {
       if (this.canGraze) {
         this.canGraze = false;
+        this.grazeRange = 0.1;
         grazeScore++;
         console.log('graze');
       }
@@ -157,17 +159,20 @@ class StandardCircularHitbox {
 //classes for enemies, each one has different behaviour but use a set type for things like sprites
 //////////////////////////////////////////////////////////////////////////////////////////////
 class StandardEnemy {
-  constructor(type,time,position,direction,speed) {
+  constructor(type,time,x,y,direction,speed) {
     this.type = type;
     this.time = time;
-    this.pos = position;
+    this.x = x;
+    this.y = y;
     this.dir = direction;
     this.speed = speed;
+    this.originalDirection = direction;
+    this.timeAlive = 0;
   }
   draw() {
-    fill(150, 255, 150,50);
+    fill(100, 200, 100);
     noStroke();
-    circle(this.x,this.y,PLAYER_HITBOX_DIAMETER);
+    circle(this.x,this.y,25);
   }
   checkForCollision() {
     //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
@@ -178,8 +183,19 @@ class StandardEnemy {
   }
   move() {
     //move in direction in degrees
-    this.x += this.speed * Math.cos(this.direction * Math.PI / 180);
-    this.y += this.speed * Math.sin(this.direction * Math.PI / 180);
+    this.dir += this.originalDirection;
+    this.x += this.speed * Math.cos(this.dir * Math.PI / 180);
+    this.y += this.speed * Math.sin(this.dir * Math.PI / 180);
+  }
+  checkForAttack() {
+    this.timeAlive++;
+    if (this.timeAlive % 30 === 0) {
+      createHitbox(0,this.x,this.y,0,3,20);
+      createHitbox(0,this.x,this.y,72,3,20);
+      createHitbox(0,this.x,this.y,144,3,20);
+      createHitbox(0,this.x,this.y,216,3,20);
+      createHitbox(0,this.x,this.y,288,3,20);
+    }
   }
 }
 
@@ -194,8 +210,6 @@ function preload() {
 function setup() {
   testHitbox = new StandardCircularHitbox(300,300,360,0,15,0,0);
   testPickup = new StandardPlayerPickup(width/2,-100,15,8,'type');
-  //testPickup2 = new StandardPlayerPickup(width/2-123,0,5,12,'type');
-
   hitboxArray.push(testHitbox);
   pickupArray.push(testPickup);
   //pickupArray.push(testPickup2);
@@ -288,10 +302,6 @@ function draw() {
   drawBackgroundBuffer();
   fill('deeppink');
 
-  if (frameCount % 5 === 0) {
-    //createPickup(0,random(-350,350),-450,5,8,'type');
-  }
-
   textFont(font);
   textSize(20);
   stroke(0);
@@ -303,9 +313,6 @@ function draw() {
 
   checkFrameCount();
   runState();
-  if (frameCount % 30 === 0) {
-    createHitbox(0,0,0,0,0,8,0,0);
-  }
 }
 
 function runState() {
@@ -351,6 +358,14 @@ function updateObjects() {
       pickup.draw();
     }
   }
+  for (let enemy of enemyArray) {
+    enemy.move();
+    enemy.checkForCollision();
+    enemy.checkForAttack();
+    if (drawHitboxes) {
+      enemy.draw();
+    }
+  }
 }
 
 function playTrack(track) {
@@ -389,7 +404,7 @@ function readStageInfo() {
       }
       if (textLine === "newEnemy") {
         //create new enemy with info from text
-        newEnemy(textFile[line].slice(-3), textFile[line+1].slice(-3), textFile[line+2].slice(-3), textFile[line+3].slice(-3), textFile[line+4].slice(-3), textFile[line+5].slice(-3));
+        newEnemy(textFile[line].slice(-3), textFile[line+1].slice(-3), textFile[line+2].slice(-4), textFile[line+3].slice(-4), textFile[line+4].slice(-3), textFile[line+5].slice(-3));
       }
 
     }
@@ -399,7 +414,7 @@ function readStageInfo() {
 function newEnemy(type,time,x,y,direction,speed) {
   //add time to spawn in enemy array, every second game will check if the array has the number equal to stage time,
   //and will spawn every enemy in that array
-  console.log(speed);
+  //console.log(speed);
   time = int(time);
   currentStageEnemyArray.push(time);
   //info of enemy
@@ -411,6 +426,7 @@ function newEnemy(type,time,x,y,direction,speed) {
     direction: int(direction),
     speed: int(speed)
   };
+  console.log(enemyInfo);
   if (currentStageEnemyArray.includes(time)) {
     //put enemy in time slot in array
     currentStageEnemyArray.push(enemyInfo);
@@ -420,7 +436,15 @@ function newEnemy(type,time,x,y,direction,speed) {
 function spawnEnemiesEachSecond() {
   console.log(stageSeconds);
   if (currentStageEnemyArray.includes(stageSeconds)) {
-    for (let enemy of currentStageEnemyArray[])
+    for (let enemy of currentStageEnemyArray) {
+      if (enemy.time === stageSeconds) {
+        //if enemy exists to spawn in this time
+        //(type,time,position,direction,speed)
+        // console.log(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed);
+        let newEnemyToSpawn = new StandardEnemy(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed);
+        enemyArray.push(newEnemyToSpawn);
+      }
+    }
   }
 }
 
