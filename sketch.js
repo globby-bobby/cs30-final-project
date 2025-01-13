@@ -7,6 +7,7 @@
 
 let drawPictures = true;
 let drawHitboxes = true;
+let drawGrazeHitboxes = false;
 
 let canvas;
 let font;
@@ -14,11 +15,13 @@ let font;
 let hitboxArray = [];
 let pickupArray = [];
 let enemyArray = [];
+let playerBulletArray = [];
 let currentStageEnemyArray = [];
 let testHitbox;
 
 const MAX_HITBOX_COUNT = 200;
 const MAX_PICKUP_COUNT = 200;
+const MAX_PLAYER_BULLET_COUNT = 100;
 
 let stage = 1;
 let state = 'game';
@@ -29,10 +32,13 @@ let spawnpos = 0;
 let playerX = 0;
 let playerY = 0;
 let bringPickupsToPlayer = false;
+
 const DEFAULT_PLAYER_MOVESPEED = 4;
 const SHIFT_PLAYER_MOVESPEED = 2;
-const PLAYER_HITBOX_DIAMETER = 5;
-const GRAZE_RANGE_MULTIPLIER = 25;
+const PLAYER_HITBOX_DIAMETER = 15;
+const PLAYER_BULLET_SIZE = 5;
+const ENEMY_SIZE = 25;
+const GRAZE_RANGE_MULTIPLIER = 50;
 const PICKUP_MAGNET_DISTANCE = 60;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
 
@@ -41,9 +47,13 @@ let textFileStage1;
 let dialogueFileStage1;
 
 //the three numbers shown on side of gameplay screen in order from top to bottom
-let powerScore = 0;
+let powerScore = 30;
 let grazeScore = 0;
 let pointScore = 0;
+
+let shootingCooldown = 0;
+//if bullet spawns on left or right
+let firingFlipflop = 1;
 
 //one at front is hidden to show zeroes ahead of actual number
 //it would be better to do "00000" + score
@@ -109,7 +119,6 @@ class StandardPlayerPickup {
 
 //classes for hitboxes, each one has different behaviour but similar properties such as speed, size
 //////////////////////////////////////////////////////////////////////////////////////////////
-//default circle hitbox that moves straight at a set speed
 class StandardCircularHitbox {
   constructor(x,y,direction,speed,radius,image,type,target) {
     this.x = x;
@@ -124,12 +133,17 @@ class StandardCircularHitbox {
     this.canGraze = true;
   }
   draw() {
-    fill(255,0,0,50);
-    noStroke();
-    circle(this.x,this.y,this.grazeRange);
-    fill(255,0,0,100);
+    if (drawGrazeHitboxes) {
+      fill(255,0,0,50);
+      noStroke();
+      circle(this.x,this.y,this.grazeRange);
+    }
+    fill(255,0,0,200);
     noStroke();
     circle(this.x,this.y,this.radius);
+    fill(255);
+    noStroke();
+    circle(this.x,this.y,this.radius*0.6);
   }
   checkForCollision() {
     //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
@@ -156,7 +170,7 @@ class StandardCircularHitbox {
   }
 }
 
-//classes for enemies, each one has different behaviour but use a set type for things like sprites
+//class for enemies, green circles
 //////////////////////////////////////////////////////////////////////////////////////////////
 class StandardEnemy {
   constructor(type,time,x,y,direction,speed) {
@@ -168,17 +182,20 @@ class StandardEnemy {
     this.speed = speed;
     this.originalDirection = direction;
     this.timeAlive = 0;
+    this.isAlive = true;
   }
   draw() {
-    fill(100, 200, 100);
-    noStroke();
-    circle(this.x,this.y,25);
+    if (this.isAlive) {
+      fill(100, 200, 100);
+      noStroke();
+      circle(this.x,this.y,ENEMY_SIZE);
+    }
   }
   checkForCollision() {
-    //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
-    //player hit inner hitbox causing them to take damage (cannot graze enemy hitboxes)
-    if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= PLAYER_HITBOX_DIAMETER/2) {
-      console.log('touched enemy');
+    for (let bullet of playerBulletArray) {
+      if (dist(bullet.x,bullet.y,this.x,this.y) - ENEMY_SIZE/2 <= PLAYER_BULLET_SIZE/2) {
+        this.isAlive = false;
+      } 
     }
   }
   move() {
@@ -189,13 +206,44 @@ class StandardEnemy {
   }
   checkForAttack() {
     this.timeAlive++;
-    if (this.timeAlive % 30 === 0) {
+    if (this.timeAlive % 30 === 0 && this.isAlive) {
       createHitbox(0,this.x,this.y,0,3,20);
       createHitbox(0,this.x,this.y,72,3,20);
       createHitbox(0,this.x,this.y,144,3,20);
       createHitbox(0,this.x,this.y,216,3,20);
       createHitbox(0,this.x,this.y,288,3,20);
     }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+//player-fired bullet class
+//////////////////////////////////////////////////////////////////////////////////////////////
+class PlayerBullet {
+  constructor(x,y,direction,speed) {
+    this.x = x;
+    this.y = y;
+    this.direction = direction;
+    this.speed = speed;
+  }
+  draw() {
+    fill(255,0,0);
+    noStroke();
+    circle(this.x,this.y,PLAYER_BULLET_SIZE);
+  }
+  checkForCollision() {
+    //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
+    //player hit inner hitbox causing them to take damage (cannot graze enemy hitboxes)
+    if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= PLAYER_BULLET_SIZE/2) {
+      console.log('touched enemy');
+    }
+  }
+  move() {
+    //move in direction in degrees
+    //this.direction = atan2(playerY-this.y,playerX-this.x);
+    this.x += this.speed/10 * Math.cos(this.direction * Math.PI / 180);
+    this.y += this.speed/10 * Math.sin(this.direction * Math.PI / 180);
   }
 }
 
@@ -237,8 +285,8 @@ function checkInput() {
       }
 
       if (keyIsDown(90)) {
-        console.log('s');
-        bringPickupsToPlayer = !bringPickupsToPlayer;
+        playerFireBullet();
+        
       }
 
       //arrow key movement
@@ -272,6 +320,41 @@ function checkInput() {
       }  
     }
   }
+}
+
+function playerFireBullet() {
+  if (shootingCooldown <= 0) {
+    //0-19
+    if (powerScore < 20) {
+      //first level of power
+      console.log('shot');
+      shootingCooldown = 10;
+      createPlayerBullet(playerX,playerY,-90,60);
+    }
+    //20-39
+    else if (powerScore < 40) {
+      //second level of power
+      console.log('shot');
+      shootingCooldown = 8;
+      createPlayerBullet(playerX,playerY,-90,70);
+      if (firingFlipflop === 0) {
+        firingFlipflop = 1;
+        createPlayerBullet(playerX-10,playerY,-45,55);
+      }
+      else if (firingFlipflop === 1) {
+        firingFlipflop = 0;
+        createPlayerBullet(playerX+10,playerY,-135,55);
+      }
+    }
+  }
+}
+
+function createPlayerBullet(x,y,direction,speed) {
+  if (playerBulletArray.length >= MAX_PLAYER_BULLET_COUNT || state !== 'game') {
+    playerBulletArray.shift();
+  }
+  let bullet = new PlayerBullet(x,y,direction,speed);
+  playerBulletArray.push(bullet);
 }
 
 function createHitbox(hitbox,x,y,direction,speed,radius,image,type,target) {
@@ -313,6 +396,7 @@ function draw() {
 
   checkFrameCount();
   runState();
+  shootingCooldown--;
 }
 
 function runState() {
@@ -366,6 +450,13 @@ function updateObjects() {
       enemy.draw();
     }
   }
+  for (let bullet of playerBulletArray) {
+    bullet.move();
+    bullet.checkForCollision();
+    if (drawHitboxes) {
+      bullet.draw();
+    }
+  }
 }
 
 function playTrack(track) {
@@ -379,7 +470,7 @@ function grazeParticle() {
 function drawPlayer() {
   if (drawHitboxes) {
     fill(255,0,0);
-    circle(playerX,playerY,5);
+    circle(playerX,playerY,PLAYER_HITBOX_DIAMETER);
   }
 }
 
@@ -449,6 +540,7 @@ function spawnEnemiesEachSecond() {
 }
 
 function drawBackgroundBuffer() {
+  //unused, window for drawing 3D background
   backgroundScreenBuffer.begin();
   clear();
   fill(255);
