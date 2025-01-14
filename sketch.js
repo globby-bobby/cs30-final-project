@@ -9,6 +9,9 @@ let drawPictures = true;
 let drawHitboxes = true;
 let drawGrazeHitboxes = false;
 
+let backgroundImage;
+let powerImage;
+
 let canvas;
 let font;
 
@@ -32,6 +35,8 @@ let spawnpos = 0;
 let playerX = 0;
 let playerY = 0;
 let bringPickupsToPlayer = false;
+
+let defaultCamera;
 
 const DEFAULT_PLAYER_MOVESPEED = 4;
 const SHIFT_PLAYER_MOVESPEED = 2;
@@ -82,8 +87,9 @@ class StandardPlayerPickup {
   draw() {
     fill(255,0,255);
     noStroke();
-    if (this.type !== 'none') {
+    if (this.type === 'power') {
       circle(this.x,this.y,this.radius*2);
+      image(powerImage,this.x,this.y,this.radius*2,this.radius*2);
     }
   }
   checkForCollision() {
@@ -173,15 +179,17 @@ class StandardCircularHitbox {
 //class for enemies, green circles
 //////////////////////////////////////////////////////////////////////////////////////////////
 class StandardEnemy {
-  constructor(type,time,x,y,direction,speed) {
+  constructor(type,time,x,y,direction,speed,interval) {
     this.type = type;
     this.time = time;
     this.x = x;
     this.y = y;
     this.dir = direction;
     this.speed = speed;
+    this.interval = interval;
     this.originalDirection = direction;
     this.timeAlive = 0;
+    this.framesAlive = 0;
     this.isAlive = true;
   }
   draw() {
@@ -199,8 +207,10 @@ class StandardEnemy {
     }
   }
   move() {
-    //move in direction in degrees
-    this.dir += this.originalDirection;
+    this.framesAlive++;
+    if (this.framesAlive >= this.interval) {
+      this.dir += this.originalDirection;
+    }
     this.x += this.speed * Math.cos(this.dir * Math.PI / 180);
     this.y += this.speed * Math.sin(this.dir * Math.PI / 180);
   }
@@ -251,20 +261,26 @@ class PlayerBullet {
 
 function preload() {
   textFileStage1 = loadStrings('/text/stage1.txt');
+
+  backgroundImage = loadImage('images/background.png');
+  powerImage = loadImage('images/power.png');
+
   //dialogueFileStage1 = loadStrings();
   //put in setup eventually and show loading screen while text/images/audio load
 }
 
 function setup() {
   testHitbox = new StandardCircularHitbox(300,300,360,0,15,0,0);
-  testPickup = new StandardPlayerPickup(width/2,-100,15,8,'type');
+  testPickup = new StandardPlayerPickup(width/2,-100,15,8,'power');
   hitboxArray.push(testHitbox);
   pickupArray.push(testPickup);
   //pickupArray.push(testPickup2);
   font = loadFont('/fonts/verdana.ttf');
   canvas = createCanvas(windowHeight/3*4, windowHeight, WEBGL);
+  defaultCamera = createCamera();
   canvas.position((windowWidth-width)/2,0);
   frameRate(60);
+  imageMode(CENTER);
 
   backgroundScreenBuffer = createFramebuffer();
   readStageInfo();
@@ -382,6 +398,9 @@ function createPickup(pickup,x,y,speed,radius,type) {
 function draw() {
   orbitControl();
   background(220);
+
+  runAnimatedBackground();
+
   drawBackgroundBuffer();
   fill('deeppink');
 
@@ -495,14 +514,13 @@ function readStageInfo() {
       }
       if (textLine === "newEnemy") {
         //create new enemy with info from text
-        newEnemy(textFile[line].slice(-3), textFile[line+1].slice(-3), textFile[line+2].slice(-4), textFile[line+3].slice(-4), textFile[line+4].slice(-3), textFile[line+5].slice(-3));
+        newEnemy(textFile[line].slice(-3),textFile[line+1].slice(-3),textFile[line+2].slice(-4),textFile[line+3].slice(-4),textFile[line+4].slice(-3),textFile[line+5].slice(-3),textFile[line+6].slice(-3));
       }
-
     }
   }
 }
 
-function newEnemy(type,time,x,y,direction,speed) {
+function newEnemy(type,time,x,y,direction,speed,interval) {
   //add time to spawn in enemy array, every second game will check if the array has the number equal to stage time,
   //and will spawn every enemy in that array
   //console.log(speed);
@@ -515,7 +533,8 @@ function newEnemy(type,time,x,y,direction,speed) {
     x: int(x),
     y: int(y),
     direction: int(direction),
-    speed: int(speed)
+    speed: int(speed),
+    interval: int(interval)
   };
   console.log(enemyInfo);
   if (currentStageEnemyArray.includes(time)) {
@@ -532,7 +551,7 @@ function spawnEnemiesEachSecond() {
         //if enemy exists to spawn in this time
         //(type,time,position,direction,speed)
         // console.log(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed);
-        let newEnemyToSpawn = new StandardEnemy(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed);
+        let newEnemyToSpawn = new StandardEnemy(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed, enemy.interval);
         enemyArray.push(newEnemyToSpawn);
       }
     }
@@ -549,4 +568,14 @@ function drawBackgroundBuffer() {
   lights();
   backgroundScreenBuffer.end();
   //image(backgroundScreenBuffer, 0, 0, 500, 500);
+}
+
+function runAnimatedBackground() {
+  //defaultCamera.setPosition(0,0,800);
+  translate(0,0,-2000);
+  textureMode(NORMAL);
+  textureWrap(REPEAT);
+  texture(backgroundImage);
+  box(500);
+  resetMatrix();
 }

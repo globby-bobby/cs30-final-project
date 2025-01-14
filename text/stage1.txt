@@ -3,50 +3,10 @@ stage:2
 //create enemy with a type, time to spawn, position, direction to turn every frame, and speed to move every frame
 //program reads last four numbers when getting x and y, 0100 would equal 100 and -100 would equal -100, 100 would equal :100
 newEnemy
-type:001
-time:001
-x:0006
-y:0005
-dir:358
-speed:005
-
-newEnemy
-type:001
-time:002
-x:0006
-y:0005
-dir:358
-speed:005
-
-newEnemy
-type:001
-time:003
-x:0006
-y:0005
-dir:358
-speed:005
-
-newEnemy
-type:001
-time:004
-x:0006
-y:0005
-dir:358
-speed:005
-
-newEnemy
-type:001
-time:005
-x:0006
-y:0005
-dir:358
-speed:005
-
-newEnemy
-type:001
-time:006
-x:0006
-y:0005
-dir:358
-speed:005
-
+    type:001
+    time:001
+    x:0006
+    y:0005
+    dir:358
+    speed:005
+    interval:030
