@@ -7,6 +7,7 @@
 
 let drawPictures = true;
 let drawHitboxes = true;
+let drawBackground = true;
 let drawGrazeHitboxes = false;
 
 let backgroundImage;
@@ -46,11 +47,15 @@ const PLAYER_BULLET_SIZE = 5;
 const ENEMY_SIZE = 25;
 const GRAZE_RANGE_MULTIPLIER = 50;
 const PICKUP_MAGNET_DISTANCE = 60;
+//used every second
+const PICKUP_SPAWN_CHANCE = 2;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
 
 //text files
 let textFileStage1;
 let dialogueFileStage1;
+
+let pickupParticleSize = 0;
 
 //the three numbers shown on side of gameplay screen in order from top to bottom
 let powerScore = 0;
@@ -106,8 +111,15 @@ class StandardPlayerPickup {
   checkForCollision() {
     //for every pickup in pickupArray, check if the pickup is close enough for player to touch
     //all hitboxes are technically circles but it shouldn't matter because it's not very noticable
-    if (dist(playerX,playerY,this.x,this.y) - this.radius <= PLAYER_HITBOX_DIAMETER/2) {
+    if (dist(playerX,playerY,this.x,this.y) - this.radius <= PLAYER_HITBOX_DIAMETER/2 && this.type !== 'none') {
       //turn into useless invisible object untill offscreen, which will then be deleted
+      if (this.type === 'power') {
+        powerScore++;
+      }
+      else if (this.type === 'power2') {
+        powerScore += 10;
+      }
+      pickupParticle();
       this.type = 'none';
     }
   }
@@ -299,6 +311,42 @@ function setup() {
   readStageInfo();
 }
 
+function draw() {
+  orbitControl();
+  background(0);
+
+  //runAnimatedBackground();
+  if (frameCount % 2 === 0 && drawBackground) {
+    drawBackgroundBuffer();
+    drawBackgroundBuffer2();
+  }
+  if (pickupParticleSize > 0) {
+    pickupParticle();
+  }
+  image(backgroundScreenBuffer2, 0, 0);
+  image(backgroundScreenBuffer, 0, 0);
+  fill('deeppink');
+
+  textFont(font);
+  textSize(20);
+  noStroke();
+  text('qwertyuiop 1234567890', 0, 0);
+  checkInput();
+
+  checkFrameCount();
+  runState();
+  shootingCooldown--;
+  console.log(powerScore);
+
+  //if player power is maxed, and player is at top of screen, send all pickups towards them
+  if (playerY <= -30 && powerScore >= 0) {
+    bringPickupsToPlayer = true;
+  }
+  else {
+    bringPickupsToPlayer = false;
+  }
+}
+
 function checkInput() {
   if (keyIsPressed) {
     if (isPlayerMovable && state === 'game') {
@@ -404,30 +452,6 @@ function createPickup(pickup,x,y,speed,radius,type) {
   pickupArray.push(newPickup);
 }
 
-function draw() {
-  orbitControl();
-  background(0);
-
-  //runAnimatedBackground();
-  if (frameCount % 2 === 0) {
-    drawBackgroundBuffer();
-    drawBackgroundBuffer2();
-  }
-  image(backgroundScreenBuffer2, 0, 0);
-  image(backgroundScreenBuffer, 0, 0);
-  fill('deeppink');
-
-  textFont(font);
-  textSize(20);
-  noStroke();
-  text('qwertyuiop 1234567890', 0, 0);
-  checkInput();
-
-  checkFrameCount();
-  runState();
-  shootingCooldown--;
-}
-
 function runState() {
   if (state === 'menu') {
     playTrack();
@@ -447,6 +471,7 @@ function checkFrameCount() {
     //reset at stage start
     if (stageSeconds >= 0) {
       stageSeconds++;
+      spawnRandomPowerPickups();
       spawnEnemiesEachSecond();
     }
     if (betweenStages) {
@@ -495,6 +520,16 @@ function playTrack(track) {
 
 function grazeParticle() {
 
+}
+
+function pickupParticle() {
+  pickupParticleSize += 0.1;
+  fill(255,0,255,200);
+  console.log(pickupParticleSize);
+  circle(playerX,playerY,pickupParticleSize/2);
+  if (pickupParticleSize >= 118) {
+    pickupParticleSize = 0;
+  }
 }
 
 function drawPlayer() {
@@ -575,7 +610,7 @@ function drawBackgroundBuffer() {
     bgZ = 500;
     clear();
     if (backgroundTimer >= 12) {
-      clear()
+      clear();
       changeBackground();
     }
     else {
@@ -588,7 +623,7 @@ function drawBackgroundBuffer() {
   }
   else if (backgroundMode === 2) {
     if (backgroundTimer >= 12) {
-      clear()
+      clear();
       changeBackground();
     }
     else {
@@ -605,7 +640,7 @@ function drawBackgroundBuffer() {
     }
   }
   else if (backgroundMode === 3) {
-    clear()
+    clear();
     if (backgroundTimer >= 12) {
       changeBackground();
     }
@@ -626,7 +661,7 @@ function drawBackgroundBuffer() {
   else if (backgroundMode === TOTAL_BACKGROUNDS) {
     bgZ = 300;
     if (backgroundTimer >= 3) {
-      clear()
+      clear();
       backgroundTimer = 0;
       backgroundMode++;
     }
@@ -639,7 +674,7 @@ function drawBackgroundBuffer() {
   else if (backgroundMode === TOTAL_BACKGROUNDS + 1) {
     bgZ = 350;
     if (backgroundTimer >= 3) {
-      clear()
+      clear();
       backgroundTimer = 0;
       backgroundMode++;
     }
@@ -652,7 +687,7 @@ function drawBackgroundBuffer() {
   else if (backgroundMode === TOTAL_BACKGROUNDS + 2) {
     bgZ = 400;
     if (backgroundTimer >= 3) {
-      clear()
+      clear();
       backgroundTimer = 0;
       backgroundMode++;
     }
@@ -665,8 +700,8 @@ function drawBackgroundBuffer() {
   else if (backgroundMode === TOTAL_BACKGROUNDS + 3) {
     bgZ = 430;
     if (backgroundTimer >= 3) {
-      clear()
-      changeBackground()
+      clear();
+      changeBackground();
     }
     else {
       translate(bgX,bgY,bgZ);
@@ -692,7 +727,7 @@ function drawBackgroundBuffer2() {
 }
 
 function changeBackground() {
-  let previousBackground = backgroundMode
+  let previousBackground = backgroundMode;
   backgroundTimer = 0;
   bgX, bgY, bgX = 0;
   backgroundMode = round(random(1,TOTAL_BACKGROUNDS));
@@ -702,5 +737,18 @@ function changeBackground() {
   }
   if (backgroundMode === 3) {
     bgX = -300;
+  }
+}
+
+function spawnRandomPowerPickups() {
+  //chance every second to spawn small power pickup at top of screen
+  if (round(random(0,PICKUP_SPAWN_CHANCE)) === round(PICKUP_SPAWN_CHANCE/2) && !bringPickupsToPlayer) {
+    //rarer chance for large pickup
+    if (round(random(0,PICKUP_SPAWN_CHANCE*4)) === round(PICKUP_SPAWN_CHANCE/2)) {
+      //createPickup(0,random(-400,400),-400,10,15,'power2');
+    }
+    else {
+      createPickup(0,random(-400,400),-400,10,8,'power');
+    }
   }
 }
