@@ -10,6 +10,7 @@ let drawHitboxes = true;
 let drawGrazeHitboxes = false;
 
 let backgroundImage;
+let gradientImage;
 let powerImage;
 
 let canvas;
@@ -52,7 +53,7 @@ let textFileStage1;
 let dialogueFileStage1;
 
 //the three numbers shown on side of gameplay screen in order from top to bottom
-let powerScore = 30;
+let powerScore = 0;
 let grazeScore = 0;
 let pointScore = 0;
 
@@ -70,7 +71,17 @@ let seconds = 0;
 //how many seconds the stage has been running for, resets on stage start (number will not increase if below zero)
 let stageSeconds = 0;
 
+//different motions for the animated background
+let backgroundMode = 1;
+let backgroundTimer = 0;
+let bgX = 0;
+let bgY = 0;
+let bgZ = 500;
+
+const TOTAL_BACKGROUNDS = 4;
+
 let backgroundScreenBuffer;
+let backgroundScreenBuffer2;
 
 //classes for pickups that the player can touch to power up
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,7 +117,6 @@ class StandardPlayerPickup {
       if (this.speed === this.originalSpeed) {
         this.speed = 55;
       }
-      angleMode(DEGREES);
       //point towards player
       this.direction = atan2(playerY-this.y,playerX-this.x);
       this.x += this.speed/10 * Math.cos(this.direction * Math.PI / 180);
@@ -216,7 +226,7 @@ class StandardEnemy {
   }
   checkForAttack() {
     this.timeAlive++;
-    if (this.timeAlive % 30 === 0 && this.isAlive) {
+    if (this.timeAlive % 20 === 0 && this.isAlive) {
       createHitbox(0,this.x,this.y,0,3,20);
       createHitbox(0,this.x,this.y,72,3,20);
       createHitbox(0,this.x,this.y,144,3,20);
@@ -263,6 +273,7 @@ function preload() {
   textFileStage1 = loadStrings('/text/stage1.txt');
 
   backgroundImage = loadImage('images/background.png');
+  gradientImage = loadImage('images/gradient1.png');
   powerImage = loadImage('images/power.png');
 
   //dialogueFileStage1 = loadStrings();
@@ -281,10 +292,11 @@ function setup() {
   canvas.position((windowWidth-width)/2,0);
   frameRate(60);
   imageMode(CENTER);
+  angleMode(DEGREES);
 
   backgroundScreenBuffer = createFramebuffer();
+  backgroundScreenBuffer2 = createFramebuffer();
   readStageInfo();
-  //camera(width/2,height/2,800,0,0,0);
 }
 
 function checkInput() {
@@ -302,7 +314,6 @@ function checkInput() {
 
       if (keyIsDown(90)) {
         playerFireBullet();
-        
       }
 
       //arrow key movement
@@ -343,15 +354,13 @@ function playerFireBullet() {
     //0-19
     if (powerScore < 20) {
       //first level of power
-      console.log('shot');
       shootingCooldown = 10;
       createPlayerBullet(playerX,playerY,-90,60);
     }
     //20-39
     else if (powerScore < 40) {
       //second level of power
-      console.log('shot');
-      shootingCooldown = 8;
+      shootingCooldown = 12;
       createPlayerBullet(playerX,playerY,-90,70);
       if (firingFlipflop === 0) {
         firingFlipflop = 1;
@@ -397,18 +406,19 @@ function createPickup(pickup,x,y,speed,radius,type) {
 
 function draw() {
   orbitControl();
-  background(220);
+  background(0);
 
-  runAnimatedBackground();
-
-  drawBackgroundBuffer();
+  //runAnimatedBackground();
+  if (frameCount % 2 === 0) {
+    drawBackgroundBuffer();
+    drawBackgroundBuffer2();
+  }
+  image(backgroundScreenBuffer2, 0, 0);
+  image(backgroundScreenBuffer, 0, 0);
   fill('deeppink');
 
   textFont(font);
   textSize(20);
-  stroke(0);
-  noFill();
-  rect(20,20,height-80);
   noStroke();
   text('qwertyuiop 1234567890', 0, 0);
   checkInput();
@@ -433,6 +443,7 @@ function checkFrameCount() {
   //run this every second since game starts
   if (frameCount % 60 === 1) {
     seconds++;
+    backgroundTimer++;
     //reset at stage start
     if (stageSeconds >= 0) {
       stageSeconds++;
@@ -536,7 +547,6 @@ function newEnemy(type,time,x,y,direction,speed,interval) {
     speed: int(speed),
     interval: int(interval)
   };
-  console.log(enemyInfo);
   if (currentStageEnemyArray.includes(time)) {
     //put enemy in time slot in array
     currentStageEnemyArray.push(enemyInfo);
@@ -544,7 +554,6 @@ function newEnemy(type,time,x,y,direction,speed,interval) {
 }
 
 function spawnEnemiesEachSecond() {
-  console.log(stageSeconds);
   if (currentStageEnemyArray.includes(stageSeconds)) {
     for (let enemy of currentStageEnemyArray) {
       if (enemy.time === stageSeconds) {
@@ -559,23 +568,139 @@ function spawnEnemiesEachSecond() {
 }
 
 function drawBackgroundBuffer() {
-  //unused, window for drawing 3D background
+  //window for drawing 3D background
   backgroundScreenBuffer.begin();
-  clear();
-  fill(255);
-  rect(0,0,500,500);
-  torus(20);
-  lights();
+  fill(0,0,0,255);
+  if (backgroundMode === 1) {
+    bgZ = 500;
+    clear();
+    if (backgroundTimer >= 12) {
+      clear()
+      changeBackground();
+    }
+    else {
+      translate(bgX,bgY,bgZ);
+      texture(backgroundImage);
+      rotateX(degrees(frameCount * 0.01));
+      rotateY(degrees(frameCount * 0.01));
+      rotateZ(degrees(frameCount * 0.01));
+    }
+  }
+  else if (backgroundMode === 2) {
+    if (backgroundTimer >= 12) {
+      clear()
+      changeBackground();
+    }
+    else {
+      bgZ = 300;
+      translate(bgX,bgY,bgZ);
+      translate(bgX+random(-200,200),bgY+random(-200,200),bgZ);
+      if (round(random(0,100)) === 5) {
+        clear();
+      }
+      texture(backgroundImage);
+      rotateX(degrees(frameCount * random(1,359)));
+      rotateY(degrees(frameCount * random(1,359)));
+      rotateZ(degrees(frameCount * random(1,359)));
+    }
+  }
+  else if (backgroundMode === 3) {
+    clear()
+    if (backgroundTimer >= 12) {
+      changeBackground();
+    }
+    else {
+      bgZ = 800;
+      bgX += 8;
+      translate(bgX,bgY,bgZ);
+      if (bgX > 300) {
+        bgX = -300;
+      }
+      if (round(random(0,100)) === 5) {
+        clear();
+      }
+      texture(backgroundImage);
+    }
+  }
+  //ensure the background cannot be any of the ones below (except for this one) since it is meant to follow the pattern shown
+  else if (backgroundMode === TOTAL_BACKGROUNDS) {
+    bgZ = 300;
+    if (backgroundTimer >= 3) {
+      clear()
+      backgroundTimer = 0;
+      backgroundMode++;
+    }
+    else {
+      translate(bgX,bgY,bgZ);
+      texture(backgroundImage);
+      rotateY(degrees(frameCount * 15));
+    }
+  }
+  else if (backgroundMode === TOTAL_BACKGROUNDS + 1) {
+    bgZ = 350;
+    if (backgroundTimer >= 3) {
+      clear()
+      backgroundTimer = 0;
+      backgroundMode++;
+    }
+    else {
+      translate(bgX,bgY,bgZ);
+      texture(backgroundImage);
+      rotateX(degrees(frameCount * -15));
+    }
+  }
+  else if (backgroundMode === TOTAL_BACKGROUNDS + 2) {
+    bgZ = 400;
+    if (backgroundTimer >= 3) {
+      clear()
+      backgroundTimer = 0;
+      backgroundMode++;
+    }
+    else {
+      translate(bgX,bgY,bgZ);
+      texture(backgroundImage);
+      rotateY(degrees(frameCount * -15));
+    }
+  }
+  else if (backgroundMode === TOTAL_BACKGROUNDS + 3) {
+    bgZ = 430;
+    if (backgroundTimer >= 3) {
+      clear()
+      changeBackground()
+    }
+    else {
+      translate(bgX,bgY,bgZ);
+      texture(backgroundImage);
+      rotateX(degrees(frameCount * 15));
+    }
+  }
+  else {
+    fill(0,0,0,255);
+  }
+  box(200);
+  resetMatrix();
   backgroundScreenBuffer.end();
   //image(backgroundScreenBuffer, 0, 0, 500, 500);
 }
 
-function runAnimatedBackground() {
-  //defaultCamera.setPosition(0,0,800);
-  translate(0,0,-2000);
-  textureMode(NORMAL);
-  textureWrap(REPEAT);
-  texture(backgroundImage);
-  box(500);
-  resetMatrix();
+function drawBackgroundBuffer2() {
+  if (stage === 1) {
+    backgroundScreenBuffer2.begin();
+    image(gradientImage,0,0,windowWidth,windowHeight);
+    backgroundScreenBuffer2.end();
+  }
+}
+
+function changeBackground() {
+  let previousBackground = backgroundMode
+  backgroundTimer = 0;
+  bgX, bgY, bgX = 0;
+  backgroundMode = round(random(1,TOTAL_BACKGROUNDS));
+  //smart solution
+  if (backgroundMode === previousBackground) {
+    changeBackground();
+  }
+  if (backgroundMode === 3) {
+    bgX = -300;
+  }
 }
