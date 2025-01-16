@@ -92,20 +92,26 @@ let backgroundScreenBuffer2;
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 class StandardPlayerPickup {
-  constructor(x,y,speed,radius,type) {
+  constructor(x,y,speed,radius,type,sendToPlayer) {
     this.x = x;
     this.y = y;
     this.speed = speed;
     this.radius = radius;
     this.type = type;
+    this.sendToPlayer = sendToPlayer;
     this.originalSpeed = speed;
   }
   draw() {
     fill(255,0,255);
     noStroke();
     if (this.type === 'power') {
-      circle(this.x,this.y,this.radius*2);
-      image(powerImage,this.x,this.y,this.radius*2,this.radius*2);
+      square(this.x,this.y,this.radius*2);
+      fill(255);
+      textFont(font);
+      textSize(this.radius*2.5);
+      noStroke();
+      text('P', this.x+1,this.y+this.radius*1.9);
+      //image(powerImage,this.x,this.y,this.radius*2,this.radius*2);
     }
   }
   checkForCollision() {
@@ -115,6 +121,7 @@ class StandardPlayerPickup {
       //turn into useless invisible object untill offscreen, which will then be deleted
       if (this.type === 'power') {
         powerScore++;
+        score += powerScore + 1;
       }
       else if (this.type === 'power2') {
         powerScore += 10;
@@ -125,7 +132,7 @@ class StandardPlayerPickup {
   }
   move() {
     //pickups move down by default but will fly towards player under certain circumstances
-    if (bringPickupsToPlayer || dist(playerX,playerY,this.x,this.y) < PICKUP_MAGNET_DISTANCE) {
+    if (this.sendToPlayer && bringPickupsToPlayer || dist(playerX,playerY,this.x,this.y) < PICKUP_MAGNET_DISTANCE) {
       if (this.speed === this.originalSpeed) {
         this.speed = 55;
       }
@@ -135,9 +142,12 @@ class StandardPlayerPickup {
       this.y += this.speed/10 * Math.sin(this.direction * Math.PI / 180);
       this.speed += 1;
     }
-    else {
+    else if (this.type !== 'none') {
       this.speed = this.originalSpeed;
       this.y += this.speed/10;
+    }
+    if (this.y > 400) {
+      this.type = 'none';
     }
   }
 
@@ -177,7 +187,7 @@ class StandardCircularHitbox {
     //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
     //player hit inner hitbox causing them to take damage
     if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= PLAYER_HITBOX_DIAMETER/2) {
-      console.log('true');
+      console.log('player hit');
       this.radius = 0.1;
     }
     //player 'grazed' the outer hitbox causing a sound to play and make graze number only increase once as graze only triggers once per hitbox
@@ -201,7 +211,7 @@ class StandardCircularHitbox {
 //class for enemies, green circles
 //////////////////////////////////////////////////////////////////////////////////////////////
 class StandardEnemy {
-  constructor(type,time,x,y,direction,speed,interval) {
+  constructor(type,time,x,y,direction,speed,interval,delay) {
     this.type = type;
     this.time = time;
     this.x = x;
@@ -209,6 +219,7 @@ class StandardEnemy {
     this.dir = direction;
     this.speed = speed;
     this.interval = interval;
+    this.delay = delay;
     this.originalDirection = direction;
     this.timeAlive = 0;
     this.framesAlive = 0;
@@ -223,8 +234,9 @@ class StandardEnemy {
   }
   checkForCollision() {
     for (let bullet of playerBulletArray) {
-      if (dist(bullet.x,bullet.y,this.x,this.y) - ENEMY_SIZE/2 <= PLAYER_BULLET_SIZE/2) {
+      if (dist(bullet.x,bullet.y,this.x,this.y) - ENEMY_SIZE/2 <= PLAYER_BULLET_SIZE/2 && this.isAlive) {
         this.isAlive = false;
+        score += 250;
       } 
     }
   }
@@ -233,17 +245,17 @@ class StandardEnemy {
     if (this.framesAlive >= this.interval) {
       this.dir += this.originalDirection;
     }
+    else {
+      //move down until interval is reached then start movement pattern
+      this.dir = 90;
+    }
     this.x += this.speed * Math.cos(this.dir * Math.PI / 180);
     this.y += this.speed * Math.sin(this.dir * Math.PI / 180);
   }
   checkForAttack() {
     this.timeAlive++;
-    if (this.timeAlive % 20 === 0 && this.isAlive) {
-      createHitbox(0,this.x,this.y,0,3,20);
-      createHitbox(0,this.x,this.y,72,3,20);
-      createHitbox(0,this.x,this.y,144,3,20);
-      createHitbox(0,this.x,this.y,216,3,20);
-      createHitbox(0,this.x,this.y,288,3,20);
+    if (this.timeAlive % this.delay === 0 && this.isAlive && this.framesAlive >= this.interval) {
+      enemyAttackFromType(int(this.type),this.x,this.y,this.dir,this.speed);
     }
   }
 }
@@ -314,29 +326,33 @@ function setup() {
 function draw() {
   orbitControl();
   background(0);
-
   //runAnimatedBackground();
   if (frameCount % 2 === 0 && drawBackground) {
     drawBackgroundBuffer();
     drawBackgroundBuffer2();
   }
+  image(backgroundScreenBuffer2, 0, 0);
+  image(backgroundScreenBuffer, 0, 0);
+
   if (pickupParticleSize > 0) {
     pickupParticle();
   }
-  image(backgroundScreenBuffer2, 0, 0);
-  image(backgroundScreenBuffer, 0, 0);
-  fill('deeppink');
 
+  fill('deeppink');
   textFont(font);
   textSize(20);
   noStroke();
-  text('qwertyuiop 1234567890', 0, 0);
+  text(str(powerScore), -350, 350);
+  fill('deeppink');
+  textFont(font);
+  textSize(20);
+  noStroke();
+  text(str(score).slice(1), -300, 350);
   checkInput();
 
   checkFrameCount();
   runState();
   shootingCooldown--;
-  console.log(powerScore);
 
   //if player power is maxed, and player is at top of screen, send all pickups towards them
   if (playerY <= -30 && powerScore >= 0) {
@@ -397,6 +413,20 @@ function checkInput() {
   }
 }
 
+function enemyAttackFromType(type,x,y,dir,speed) {
+  //hardcoded attack patterns go here
+  if (type === 1) {
+    createHitbox(0,x,y,0,3,20);
+    createHitbox(0,x,y,72,3,20);
+    createHitbox(0,x,y,144,3,20);
+    createHitbox(0,x,y,216,3,20);
+    createHitbox(0,x,y,288,3,20);
+  }
+  if (type === 2) {
+    createHitbox(0,x,y,dir,3,20);
+  }
+}
+
 function playerFireBullet() {
   if (shootingCooldown <= 0) {
     //0-19
@@ -440,10 +470,10 @@ function createHitbox(hitbox,x,y,direction,speed,radius,image,type,target) {
   }
   hitboxArray.push(newHitbox);
 }
-function createPickup(pickup,x,y,speed,radius,type) {
+function createPickup(pickup,x,y,speed,radius,type,sendToPlayer) {
   let newPickup;
   if (pickup === 0) {
-    newPickup = new StandardPlayerPickup(x,y,speed,radius,type);
+    newPickup = new StandardPlayerPickup(x,y,speed,radius,type,sendToPlayer);
     pickupArray.push(newPickup);
   }
   if (pickupArray.length >= MAX_PICKUP_COUNT || state !== 'game') {
@@ -491,8 +521,11 @@ function updateObjects() {
     }
   }
   for (let pickup of pickupArray) {
-    pickup.move();
-    pickup.checkForCollision();
+    //lazy
+    if (true) {
+      pickup.move();
+      pickup.checkForCollision();
+    }
     if (drawHitboxes) {
       pickup.draw();
     }
@@ -523,12 +556,14 @@ function grazeParticle() {
 }
 
 function pickupParticle() {
-  pickupParticleSize += 0.1;
-  fill(255,0,255,200);
-  console.log(pickupParticleSize);
+  pickupParticleSize += 15;
+  fill(255,0,255,100);
   circle(playerX,playerY,pickupParticleSize/2);
-  if (pickupParticleSize >= 118) {
+  if (pickupParticleSize >= 80) {
     pickupParticleSize = 0;
+  }
+  else if (pickupParticleSize <= 30) {
+    pickupParticleSize = 30;
   }
 }
 
@@ -560,13 +595,13 @@ function readStageInfo() {
       }
       if (textLine === "newEnemy") {
         //create new enemy with info from text
-        newEnemy(textFile[line].slice(-3),textFile[line+1].slice(-3),textFile[line+2].slice(-4),textFile[line+3].slice(-4),textFile[line+4].slice(-3),textFile[line+5].slice(-3),textFile[line+6].slice(-3));
+        newEnemy(textFile[line].slice(-3),textFile[line+1].slice(-3),textFile[line+2].slice(-4),textFile[line+3].slice(-4),textFile[line+4].slice(-3),textFile[line+5].slice(-3),textFile[line+6].slice(-3),textFile[line+7].slice(-3));
       }
     }
   }
 }
 
-function newEnemy(type,time,x,y,direction,speed,interval) {
+function newEnemy(type,time,x,y,direction,speed,interval,delayBetweenAttacks) {
   //add time to spawn in enemy array, every second game will check if the array has the number equal to stage time,
   //and will spawn every enemy in that array
   //console.log(speed);
@@ -580,7 +615,8 @@ function newEnemy(type,time,x,y,direction,speed,interval) {
     y: int(y),
     direction: int(direction),
     speed: int(speed),
-    interval: int(interval)
+    interval: int(interval),
+    delay: int(delayBetweenAttacks)
   };
   if (currentStageEnemyArray.includes(time)) {
     //put enemy in time slot in array
@@ -595,7 +631,7 @@ function spawnEnemiesEachSecond() {
         //if enemy exists to spawn in this time
         //(type,time,position,direction,speed)
         // console.log(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed);
-        let newEnemyToSpawn = new StandardEnemy(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed, enemy.interval);
+        let newEnemyToSpawn = new StandardEnemy(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed, enemy.interval, enemy.delay);
         enemyArray.push(newEnemyToSpawn);
       }
     }
@@ -609,17 +645,17 @@ function drawBackgroundBuffer() {
   if (backgroundMode === 1) {
     bgZ = 500;
     clear();
-    if (backgroundTimer >= 12) {
-      clear();
-      changeBackground();
-    }
-    else {
-      translate(bgX,bgY,bgZ);
-      texture(backgroundImage);
-      rotateX(degrees(frameCount * 0.01));
-      rotateY(degrees(frameCount * 0.01));
-      rotateZ(degrees(frameCount * 0.01));
-    }
+    //if (backgroundTimer >= 12) {
+    //  clear();
+    //  changeBackground();
+    //}
+    //else {
+    translate(bgX,bgY,bgZ);
+    texture(backgroundImage);
+    rotateX(degrees(frameCount * 0.01));
+    rotateY(degrees(frameCount * 0.01));
+    rotateZ(degrees(frameCount * 0.01));
+    //}
   }
   else if (backgroundMode === 2) {
     if (backgroundTimer >= 12) {
@@ -742,13 +778,13 @@ function changeBackground() {
 
 function spawnRandomPowerPickups() {
   //chance every second to spawn small power pickup at top of screen
-  if (round(random(0,PICKUP_SPAWN_CHANCE)) === round(PICKUP_SPAWN_CHANCE/2) && !bringPickupsToPlayer) {
+  if (round(random(0,PICKUP_SPAWN_CHANCE)) === round(PICKUP_SPAWN_CHANCE/2)) {
     //rarer chance for large pickup
     if (round(random(0,PICKUP_SPAWN_CHANCE*4)) === round(PICKUP_SPAWN_CHANCE/2)) {
-      //createPickup(0,random(-400,400),-400,10,15,'power2');
+      //createPickup(0,random(-400,400),-400,10,15,'power2',false);
     }
     else {
-      createPickup(0,random(-400,400),-400,10,8,'power');
+      createPickup(0,random(-400,400),-400,10,8,'power',true);
     }
   }
 }

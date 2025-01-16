@@ -4,9 +4,20 @@ stage:2
 //program reads last four numbers when getting x and y, 0100 would equal 100 and -100 would equal -100, 100 would equal :100
 newEnemy
     type:001
-    time:001
+    time:002
+    x:-200
+    y:-400
+    dir:001
+    speed:003
+    interval:060
+    delay:020
+
+newEnemy
+    type:002
+    time:005
     x:0006
     y:0005
     dir:358
     speed:005
     interval:030
+    delay:010

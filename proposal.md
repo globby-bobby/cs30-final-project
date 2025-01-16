@@ -3,7 +3,7 @@ I will make a bullet hell game similar to the Touhou series of games where you c
 
 ## Needs To Have
 - 1 - Bullets that collide with the player
-- 2 - At least one or two stages, all of which contains basic enemies that shoot and a miniboss
+- 2 - At least one or two stages, all of which contains basic enemies that shoot and a boss enemy
 - 3 - Player that can shoot bullets at enemies
 - 4 - Menu screen, results screen
 - 5 - Proper font, artwork, sound effects
