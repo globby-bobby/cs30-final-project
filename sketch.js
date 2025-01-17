@@ -47,6 +47,7 @@ const PLAYER_BULLET_SIZE = 5;
 const ENEMY_SIZE = 25;
 const GRAZE_RANGE_MULTIPLIER = 50;
 const PICKUP_MAGNET_DISTANCE = 60;
+const AUTO_PICK_UP_PICKUPS_HEIGHT = -110;
 //used every second
 const PICKUP_SPAWN_CHANCE = 2;
 let playerMoveSpeed = DEFAULT_PLAYER_MOVESPEED;
@@ -211,7 +212,7 @@ class StandardCircularHitbox {
 //class for enemies, green circles
 //////////////////////////////////////////////////////////////////////////////////////////////
 class StandardEnemy {
-  constructor(type,time,x,y,direction,speed,interval,delay) {
+  constructor(type,time,x,y,direction,speed,interval,delay,lifetime) {
     this.type = type;
     this.time = time;
     this.x = x;
@@ -220,6 +221,7 @@ class StandardEnemy {
     this.speed = speed;
     this.interval = interval;
     this.delay = delay;
+    this.lifetime = lifetime;
     this.originalDirection = direction;
     this.timeAlive = 0;
     this.framesAlive = 0;
@@ -242,8 +244,11 @@ class StandardEnemy {
   }
   move() {
     this.framesAlive++;
-    if (this.framesAlive >= this.interval) {
+    if (this.framesAlive >= this.interval && this.framesAlive < this.lifetime) {
       this.dir += this.originalDirection;
+    }
+    else if (this.framesAlive >= this.lifetime) {
+      
     }
     else {
       //move down until interval is reached then start movement pattern
@@ -312,6 +317,7 @@ function setup() {
   //pickupArray.push(testPickup2);
   font = loadFont('/fonts/verdana.ttf');
   canvas = createCanvas(windowHeight/3*4, windowHeight, WEBGL);
+  //canvas = createCanvas(400, 300, WEBGL);
   defaultCamera = createCamera();
   canvas.position((windowWidth-width)/2,0);
   frameRate(60);
@@ -325,14 +331,19 @@ function setup() {
 
 function draw() {
   orbitControl();
-  background(0);
+  background(50);
   //runAnimatedBackground();
   if (frameCount % 2 === 0 && drawBackground) {
     drawBackgroundBuffer();
     drawBackgroundBuffer2();
   }
-  image(backgroundScreenBuffer2, 0, 0);
-  image(backgroundScreenBuffer, 0, 0);
+  imageMode(CENTER);
+  image(backgroundScreenBuffer2, -width/6,0,height/1.4,height-round(height*0.1666666));
+  // image(backgroundScreenBuffer2, -width/4,0,height/2,height-round(height*0.1666666));
+  //texture(backgroundScreenBuffer);
+  //rect(0,0,400,300);
+  image(backgroundScreenBuffer, -windowWidth*0.4, 0, windowWidth*0.8, windowWidth*0.8, windowHeight*0.8);
+  imageMode(CENTER);
 
   if (pickupParticleSize > 0) {
     pickupParticle();
@@ -355,7 +366,7 @@ function draw() {
   shootingCooldown--;
 
   //if player power is maxed, and player is at top of screen, send all pickups towards them
-  if (playerY <= -30 && powerScore >= 0) {
+  if (playerY <= AUTO_PICK_UP_PICKUPS_HEIGHT && powerScore >= 0) {
     bringPickupsToPlayer = true;
   }
   else {
@@ -595,13 +606,13 @@ function readStageInfo() {
       }
       if (textLine === "newEnemy") {
         //create new enemy with info from text
-        newEnemy(textFile[line].slice(-3),textFile[line+1].slice(-3),textFile[line+2].slice(-4),textFile[line+3].slice(-4),textFile[line+4].slice(-3),textFile[line+5].slice(-3),textFile[line+6].slice(-3),textFile[line+7].slice(-3));
+        newEnemy(textFile[line].slice(-3),textFile[line+1].slice(-3),textFile[line+2].slice(-4),textFile[line+3].slice(-4),textFile[line+4].slice(-3),textFile[line+5].slice(-3),textFile[line+6].slice(-3),textFile[line+7].slice(-3),textFile[line+8].slice(-3));
       }
     }
   }
 }
 
-function newEnemy(type,time,x,y,direction,speed,interval,delayBetweenAttacks) {
+function newEnemy(type,time,x,y,direction,speed,interval,delayBetweenAttacks,lifetime) {
   //add time to spawn in enemy array, every second game will check if the array has the number equal to stage time,
   //and will spawn every enemy in that array
   //console.log(speed);
@@ -616,7 +627,8 @@ function newEnemy(type,time,x,y,direction,speed,interval,delayBetweenAttacks) {
     direction: int(direction),
     speed: int(speed),
     interval: int(interval),
-    delay: int(delayBetweenAttacks)
+    delay: int(delayBetweenAttacks),
+    lifetime: int(lifetime),
   };
   if (currentStageEnemyArray.includes(time)) {
     //put enemy in time slot in array
@@ -631,7 +643,7 @@ function spawnEnemiesEachSecond() {
         //if enemy exists to spawn in this time
         //(type,time,position,direction,speed)
         // console.log(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed);
-        let newEnemyToSpawn = new StandardEnemy(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed, enemy.interval, enemy.delay);
+        let newEnemyToSpawn = new StandardEnemy(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed, enemy.interval, enemy.delay, enemy.lifetime);
         enemyArray.push(newEnemyToSpawn);
       }
     }
@@ -641,9 +653,10 @@ function spawnEnemiesEachSecond() {
 function drawBackgroundBuffer() {
   //window for drawing 3D background
   backgroundScreenBuffer.begin();
+  backgroundScreenBuffer.resize(1000,1000);
   fill(0,0,0,255);
   if (backgroundMode === 1) {
-    bgZ = 500;
+    bgZ = 400;
     clear();
     //if (backgroundTimer >= 12) {
     //  clear();
