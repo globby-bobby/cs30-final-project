@@ -13,6 +13,7 @@ let drawGrazeHitboxes = false;
 let backgroundImage;
 let gradientImage;
 let powerImage;
+let test;
 
 let canvas;
 let font;
@@ -37,6 +38,9 @@ let spawnpos = 0;
 let playerX = 0;
 let playerY = 0;
 let bringPickupsToPlayer = false;
+
+let gameBoundMin;
+let gameBoundMax;
 
 let defaultCamera;
 
@@ -212,7 +216,7 @@ class StandardCircularHitbox {
 //class for enemies, green circles
 //////////////////////////////////////////////////////////////////////////////////////////////
 class StandardEnemy {
-  constructor(type,time,x,y,direction,speed,interval,delay,lifetime) {
+  constructor(type,time,x,y,direction,speed,interval,delay,lifetime,originDir) {
     this.type = type;
     this.time = time;
     this.x = x;
@@ -222,7 +226,9 @@ class StandardEnemy {
     this.interval = interval;
     this.delay = delay;
     this.lifetime = lifetime;
-    this.originalDirection = direction;
+    this.originDir = originDir;
+    this.defaultDirection = direction;
+    this.defaultX = x;
     this.timeAlive = 0;
     this.framesAlive = 0;
     this.isAlive = true;
@@ -243,16 +249,27 @@ class StandardEnemy {
     }
   }
   move() {
+    if (this.framesAlive >= this.interval && this.isAlive && this.x > gameBoundMax || this.x < gameBoundMin || this.y > 400) {
+      //delete enemy when out of bounds
+      if (this.x > gameBoundMax && this.defaultX < 0) {
+        console.log(this.framesAlive,this.interval);
+        this.isAlive = false;
+      }
+      else if (this.x < gameBoundMin && this.defaultX >= 0) {
+        console.log(this.framesAlive,this.interval);
+        this.isAlive = false;
+      }
+    }
     this.framesAlive++;
     if (this.framesAlive >= this.interval && this.framesAlive < this.lifetime) {
-      this.dir += this.originalDirection;
+      this.dir += this.defaultDirection;
     }
     else if (this.framesAlive >= this.lifetime) {
       
     }
     else {
       //move down until interval is reached then start movement pattern
-      this.dir = 90;
+      this.dir = this.originDir;
     }
     this.x += this.speed * Math.cos(this.dir * Math.PI / 180);
     this.y += this.speed * Math.sin(this.dir * Math.PI / 180);
@@ -300,7 +317,7 @@ class PlayerBullet {
 
 function preload() {
   textFileStage1 = loadStrings('/text/stage1.txt');
-
+  test = loadImage('images/testimage.png');
   backgroundImage = loadImage('images/background.png');
   gradientImage = loadImage('images/gradient1.png');
   powerImage = loadImage('images/power.png');
@@ -327,6 +344,9 @@ function setup() {
   backgroundScreenBuffer = createFramebuffer();
   backgroundScreenBuffer2 = createFramebuffer();
   readStageInfo();
+
+  gameBoundMin = width/10-height/1.4;
+  gameBoundMax = width/10;
 }
 
 function draw() {
@@ -342,7 +362,7 @@ function draw() {
   // image(backgroundScreenBuffer2, -width/4,0,height/2,height-round(height*0.1666666));
   //texture(backgroundScreenBuffer);
   //rect(0,0,400,300);
-  image(backgroundScreenBuffer, -windowWidth*0.4, 0, windowWidth*0.8, windowWidth*0.8, windowHeight*0.8);
+  image(backgroundScreenBuffer,-width/6,0);
   imageMode(CENTER);
 
   if (pickupParticleSize > 0) {
@@ -372,6 +392,9 @@ function draw() {
   else {
     bringPickupsToPlayer = false;
   }
+  image(test,0,0,width,height);
+  circle(gameBoundMin,0,5);
+  circle(gameBoundMax,0,5);
 }
 
 function checkInput() {
@@ -606,13 +629,13 @@ function readStageInfo() {
       }
       if (textLine === "newEnemy") {
         //create new enemy with info from text
-        newEnemy(textFile[line].slice(-3),textFile[line+1].slice(-3),textFile[line+2].slice(-4),textFile[line+3].slice(-4),textFile[line+4].slice(-3),textFile[line+5].slice(-3),textFile[line+6].slice(-3),textFile[line+7].slice(-3),textFile[line+8].slice(-3));
+        newEnemy(textFile[line].slice(-3),textFile[line+1].slice(-3),textFile[line+2].slice(-4),textFile[line+3].slice(-4),textFile[line+4].slice(-3),textFile[line+5].slice(-3),textFile[line+6].slice(-3),textFile[line+7].slice(-3),textFile[line+8].slice(-3),textFile[line+9].slice(-3));
       }
     }
   }
 }
 
-function newEnemy(type,time,x,y,direction,speed,interval,delayBetweenAttacks,lifetime) {
+function newEnemy(type,time,x,y,direction,speed,interval,delayBetweenAttacks,lifetime,origindir) {
   //add time to spawn in enemy array, every second game will check if the array has the number equal to stage time,
   //and will spawn every enemy in that array
   //console.log(speed);
@@ -629,6 +652,7 @@ function newEnemy(type,time,x,y,direction,speed,interval,delayBetweenAttacks,lif
     interval: int(interval),
     delay: int(delayBetweenAttacks),
     lifetime: int(lifetime),
+    origindir: int(origindir),
   };
   if (currentStageEnemyArray.includes(time)) {
     //put enemy in time slot in array
@@ -643,7 +667,7 @@ function spawnEnemiesEachSecond() {
         //if enemy exists to spawn in this time
         //(type,time,position,direction,speed)
         // console.log(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed);
-        let newEnemyToSpawn = new StandardEnemy(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed, enemy.interval, enemy.delay, enemy.lifetime);
+        let newEnemyToSpawn = new StandardEnemy(enemy.type, enemy.time, enemy.x, enemy.y, enemy.direction, enemy.speed, enemy.interval, enemy.delay, enemy.lifetime, enemy.origindir);
         enemyArray.push(newEnemyToSpawn);
       }
     }

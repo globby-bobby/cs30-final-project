@@ -2,9 +2,13 @@
 stage:2
 //create enemy with a type, time to spawn, position, direction to turn every frame, and speed to move every frame
 //program reads last four numbers when getting x and y, 0100 would equal 100 and -100 would equal -100, 100 would equal :100
+//interval: how long enemy moves straight until can attack/despawn
+//delay: frames between attacks
+//lifetime: frames until enemy moves in straight line (to move offstage and despawn)
+
 newEnemy
     type:001
-    time:002
+    time:001
     x:-200
     y:-400
     dir:001
@@ -12,14 +16,16 @@ newEnemy
     interval:060
     delay:020
     lifetime:100
+    origindir:000
 
 newEnemy
     type:002
     time:005
-    x:0006
-    y:0005
-    dir:358
-    speed:005
-    interval:030
+    x:-650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
     delay:010
-    lifetime:120
+    lifetime:180
+    origindir:010
