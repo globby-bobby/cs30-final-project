@@ -13,7 +13,7 @@ let drawGrazeHitboxes = false;
 let backgroundImage;
 let gradientImage;
 let powerImage;
-let test;
+let hudImage;
 
 let canvas;
 let font;
@@ -242,7 +242,7 @@ class StandardEnemy {
   }
   checkForCollision() {
     for (let bullet of playerBulletArray) {
-      if (dist(bullet.x,bullet.y,this.x,this.y) - ENEMY_SIZE/2 <= PLAYER_BULLET_SIZE/2 && this.isAlive) {
+      if (dist(bullet.x,bullet.y,this.x,this.y) - ENEMY_SIZE/2 <= PLAYER_BULLET_SIZE/2 && this.isAlive && bullet.canHit) {
         this.isAlive = false;
         score += 250;
       } 
@@ -292,11 +292,14 @@ class PlayerBullet {
     this.y = y;
     this.direction = direction;
     this.speed = speed;
+    this.canHit = true;
   }
   draw() {
-    fill(255,0,0);
-    noStroke();
-    circle(this.x,this.y,PLAYER_BULLET_SIZE);
+    if (this.canHit) {
+      fill(255,0,0);
+      noStroke();
+      circle(this.x,this.y,PLAYER_BULLET_SIZE);
+    }
   }
   checkForCollision() {
     //for every hitbox in hitboxArray, check if the hitbox from array is able to hit this (if type = target) and if touching hitbox
@@ -310,6 +313,9 @@ class PlayerBullet {
     //this.direction = atan2(playerY-this.y,playerX-this.x);
     this.x += this.speed/10 * Math.cos(this.direction * Math.PI / 180);
     this.y += this.speed/10 * Math.sin(this.direction * Math.PI / 180);
+    if (this.y < -380) {
+      this.canHit = false;
+    }
   }
 }
 
@@ -317,7 +323,7 @@ class PlayerBullet {
 
 function preload() {
   textFileStage1 = loadStrings('/text/stage1.txt');
-  test = loadImage('images/testimage.png');
+  hudImage = loadImage('images/hud.png');
   backgroundImage = loadImage('images/background.png');
   gradientImage = loadImage('images/gradient1.png');
   powerImage = loadImage('images/power.png');
@@ -368,17 +374,6 @@ function draw() {
   if (pickupParticleSize > 0) {
     pickupParticle();
   }
-
-  fill('deeppink');
-  textFont(font);
-  textSize(20);
-  noStroke();
-  text(str(powerScore), -350, 350);
-  fill('deeppink');
-  textFont(font);
-  textSize(20);
-  noStroke();
-  text(str(score).slice(1), -300, 350);
   checkInput();
 
   checkFrameCount();
@@ -392,9 +387,19 @@ function draw() {
   else {
     bringPickupsToPlayer = false;
   }
-  image(test,0,0,width,height);
+  image(hudImage,0,0,width,height);
   circle(gameBoundMin,0,5);
   circle(gameBoundMax,0,5);
+  fill('deeppink');
+  textFont(font);
+  textSize(26);
+  noStroke();
+  text(str(score).slice(1), width/4.5, -height/2.98);
+  fill('deeppink');
+  textFont(font);
+  textSize(20);
+  noStroke();
+  //text(str(score).slice(1), -300, 350);
 }
 
 function checkInput() {
@@ -457,7 +462,7 @@ function enemyAttackFromType(type,x,y,dir,speed) {
     createHitbox(0,x,y,288,3,20);
   }
   if (type === 2) {
-    createHitbox(0,x,y,dir,3,20);
+    createHitbox(0,x,y,90,3,20);
   }
 }
 
@@ -524,6 +529,7 @@ function runState() {
     updateObjects();
     drawPlayer();
     drawStage();
+    showStatNumbers();
   }
 }
 
@@ -633,6 +639,10 @@ function readStageInfo() {
       }
     }
   }
+}
+
+function showStatNumbers() {
+
 }
 
 function newEnemy(type,time,x,y,direction,speed,interval,delayBetweenAttacks,lifetime,origindir) {
@@ -821,7 +831,7 @@ function spawnRandomPowerPickups() {
       //createPickup(0,random(-400,400),-400,10,15,'power2',false);
     }
     else {
-      createPickup(0,random(-400,400),-400,10,8,'power',true);
+      createPickup(0,random(gameBoundMin,gameBoundMax),-400,10,8,'power',false);
     }
   }
 }

@@ -6,18 +6,7 @@ stage:2
 //delay: frames between attacks
 //lifetime: frames until enemy moves in straight line (to move offstage and despawn)
 
-newEnemy
-    type:001
-    time:001
-    x:-200
-    y:-400
-    dir:001
-    speed:003
-    interval:060
-    delay:020
-    lifetime:100
-    origindir:000
-
+//1
 newEnemy
     type:002
     time:005
@@ -26,6 +15,175 @@ newEnemy
     dir:000
     speed:003
     interval:010
-    delay:010
+    delay:030
     lifetime:180
     origindir:010
+//2
+newEnemy
+    type:002
+    time:002
+    x:0650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:170
+//3
+newEnemy
+    type:002
+    time:007
+    x:-650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:010
+//4
+newEnemy
+    type:002
+    time:004
+    x:0650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:170
+
+//5
+newEnemy
+    type:002
+    time:009
+    x:-650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:010
+//6
+newEnemy
+    type:002
+    time:006
+    x:0650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:170
+//7
+newEnemy
+    type:002
+    time:0011
+    x:-650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:010
+//8
+newEnemy
+    type:002
+    time:008
+    x:0650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:170
+//9
+newEnemy
+    type:001
+    time:010
+    x:-200
+    y:-400
+    dir:001
+    speed:003
+    interval:060
+    delay:060
+    lifetime:100
+    origindir:090
+//10
+newEnemy
+    type:001
+    time:012
+    x:-100
+    y:-400
+    dir:359
+    speed:002
+    interval:060
+    delay:080
+    lifetime:150
+    origindir:090
+//11
+newEnemy
+    type:001
+    time:012
+    x:-200
+    y:-400
+    dir:001
+    speed:002
+    interval:060
+    delay:080
+    lifetime:150
+    origindir:090
+//12
+newEnemy
+    type:001
+    time:015
+    x:-100
+    y:-400
+    dir:359
+    speed:003
+    interval:060
+    delay:080
+    lifetime:150
+    origindir:090
+//13
+newEnemy
+    type:001
+    time:015
+    x:-200
+    y:-400
+    dir:001
+    speed:003
+    interval:060
+    delay:080
+    lifetime:150
+    origindir:090
+//14
+newEnemy
+    type:001
+    time:017
+    x:-100
+    y:-400
+    dir:359
+    speed:003
+    interval:060
+    delay:040
+    lifetime:150
+    origindir:090
+//15
+newEnemy
+    type:001
+    time:017
+    x:-200
+    y:-400
+    dir:001
+    speed:003
+    interval:060
+    delay:040
+    lifetime:150
+    origindir:090
