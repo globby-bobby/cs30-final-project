@@ -1,9 +1,6 @@
-// Project Title
-// Your Name
-// Date
-//
-// Extra for Experts:
-// - describe what you did to take this project "above and beyond"
+// Shooting game
+// Adam S
+// 2025/01/21
 
 let drawPictures = true;
 let drawHitboxes = true;
@@ -14,6 +11,7 @@ let backgroundImage;
 let gradientImage;
 let powerImage;
 let hudImage;
+let infoImage;
 
 let canvas;
 let font;
@@ -30,9 +28,13 @@ const MAX_PICKUP_COUNT = 200;
 const MAX_PLAYER_BULLET_COUNT = 100;
 
 let stage = 1;
-let state = 'game';
+let state = 'menu';
 let betweenStages = false;
 let isPlayerMovable = true;
+let isPlayerInvuln = false;
+let currentEndStageTime;
+
+let menuOptionSelection = 'game';
 
 let spawnpos = 0;
 let playerX = 0;
@@ -46,7 +48,8 @@ let defaultCamera;
 
 const DEFAULT_PLAYER_MOVESPEED = 4;
 const SHIFT_PLAYER_MOVESPEED = 2;
-const PLAYER_HITBOX_DIAMETER = 15;
+const PLAYER_HITBOX_DIAMETER = 8;
+const VISUAL_PLAYER_HITBOX_DIAMETER = PLAYER_HITBOX_DIAMETER * 3;
 const PLAYER_BULLET_SIZE = 5;
 const ENEMY_SIZE = 25;
 const GRAZE_RANGE_MULTIPLIER = 50;
@@ -66,13 +69,13 @@ let pickupParticleSize = 0;
 let powerScore = 0;
 let grazeScore = 0;
 let pointScore = 0;
+let lives = 3;
 
 let shootingCooldown = 0;
 //if bullet spawns on left or right
 let firingFlipflop = 1;
 
 //one at front is hidden to show zeroes ahead of actual number
-//it would be better to do "00000" + score
 let currentScore = 1000000000;
 let score = 1000000000;
 
@@ -87,6 +90,7 @@ let backgroundTimer = 0;
 let bgX = 0;
 let bgY = 0;
 let bgZ = 500;
+let flashBackgroundAlpha = 0;
 
 const TOTAL_BACKGROUNDS = 4;
 
@@ -109,7 +113,7 @@ class StandardPlayerPickup {
   draw() {
     fill(255,0,255);
     noStroke();
-    if (this.type === 'power') {
+    if (this.type === 'power' || this.type === 'power2') {
       square(this.x,this.y,this.radius*2);
       fill(255);
       textFont(font);
@@ -129,7 +133,8 @@ class StandardPlayerPickup {
         score += powerScore + 1;
       }
       else if (this.type === 'power2') {
-        powerScore += 10;
+        powerScore += 5;
+        score += powerScore*2 + 1;
       }
       pickupParticle();
       this.type = 'none';
@@ -193,6 +198,12 @@ class StandardCircularHitbox {
     //player hit inner hitbox causing them to take damage
     if (dist(playerX,playerY,this.x,this.y) - this.radius/2 <= PLAYER_HITBOX_DIAMETER/2) {
       console.log('player hit');
+      if (lives > 0) {
+        playerDamaged();
+      }
+      else {
+        console.log('game ended');
+      }
       this.radius = 0.1;
     }
     //player 'grazed' the outer hitbox causing a sound to play and make graze number only increase once as graze only triggers once per hitbox
@@ -245,6 +256,7 @@ class StandardEnemy {
       if (dist(bullet.x,bullet.y,this.x,this.y) - ENEMY_SIZE/2 <= PLAYER_BULLET_SIZE/2 && this.isAlive && bullet.canHit) {
         this.isAlive = false;
         score += 250;
+        createPickup(0,this.x,this.y,10,12,'power2',true);
       } 
     }
   }
@@ -256,7 +268,7 @@ class StandardEnemy {
         this.isAlive = false;
       }
       else if (this.x < gameBoundMin && this.defaultX >= 0) {
-        console.log(this.framesAlive,this.interval);
+        //console.log(this.framesAlive,this.interval);
         this.isAlive = false;
       }
     }
@@ -327,16 +339,10 @@ function preload() {
   backgroundImage = loadImage('images/background.png');
   gradientImage = loadImage('images/gradient1.png');
   powerImage = loadImage('images/power.png');
-
-  //dialogueFileStage1 = loadStrings();
-  //put in setup eventually and show loading screen while text/images/audio load
+  infoImage = loadImage('images/menu.png');
 }
 
 function setup() {
-  testHitbox = new StandardCircularHitbox(300,300,360,0,15,0,0);
-  testPickup = new StandardPlayerPickup(width/2,-100,15,8,'power');
-  hitboxArray.push(testHitbox);
-  pickupArray.push(testPickup);
   //pickupArray.push(testPickup2);
   font = loadFont('/fonts/verdana.ttf');
   canvas = createCanvas(windowHeight/3*4, windowHeight, WEBGL);
@@ -356,10 +362,10 @@ function setup() {
 }
 
 function draw() {
-  orbitControl();
+  //orbitControl();
   background(50);
   //runAnimatedBackground();
-  if (frameCount % 2 === 0 && drawBackground) {
+  if (frameCount % 2 === 0 && drawBackground && state === 'game') {
     drawBackgroundBuffer();
     drawBackgroundBuffer2();
   }
@@ -381,25 +387,19 @@ function draw() {
   shootingCooldown--;
 
   //if player power is maxed, and player is at top of screen, send all pickups towards them
-  if (playerY <= AUTO_PICK_UP_PICKUPS_HEIGHT && powerScore >= 0) {
+  if (playerY <= AUTO_PICK_UP_PICKUPS_HEIGHT && powerScore >= 40) {
     bringPickupsToPlayer = true;
   }
   else {
     bringPickupsToPlayer = false;
   }
-  image(hudImage,0,0,width,height);
-  circle(gameBoundMin,0,5);
-  circle(gameBoundMax,0,5);
-  fill('deeppink');
-  textFont(font);
-  textSize(26);
-  noStroke();
-  text(str(score).slice(1), width/4.5, -height/2.98);
-  fill('deeppink');
-  textFont(font);
-  textSize(20);
-  noStroke();
-  //text(str(score).slice(1), -300, 350);
+  if (state === 'game') {
+    drawGameHud();
+    //hardcoded time because i don't GOT time
+    if (stageSeconds >= 28 || lives === 0) {
+      state = 'results';
+    }
+  }
 }
 
 function checkInput() {
@@ -449,7 +449,66 @@ function checkInput() {
         playerY += playerMoveSpeed * Math.sin(playerMoveDirection * Math.PI / 180);
       }  
     }
+    else if (state === 'menu') {
+      //only two 'buttons' in menu so take the easy way out
+      if (keyIsDown(UP_ARROW) && !keyIsDown(DOWN_ARROW)) {
+        menuOptionSelection = 'game';
+      }
+      if (keyIsDown(DOWN_ARROW) && !keyIsDown(UP_ARROW)) {
+        menuOptionSelection = 'other';
+      }
+    }
   }
+}
+
+function drawGameHud() {
+  image(hudImage,0,0,width,height);
+  // circle(gameBoundMin,0,5);
+  // circle(gameBoundMax,0,5);
+  //score text (4th num)
+  fill('black');
+  textFont(font);
+  textSize(26);
+  noStroke();
+  text(str(score).slice(1), width/4.2, -height/16.98);
+  fill('white');
+  textFont(font);
+  textSize(26);
+  noStroke();
+  text(str(score).slice(1), width/4.2, -height/15.95);
+  //power score (1st num)
+  fill('black');
+  textFont(font);
+  textSize(26);
+  noStroke();
+  text(str(powerScore), width/4.5, -height/2.98);
+  fill('white');
+  textFont(font);
+  textSize(26);
+  noStroke();
+  text(str(powerScore), width/4.5, -height/2.95);
+  // graze score (2nd num)
+  fill('black');
+  textFont(font);
+  textSize(26);
+  noStroke();
+  text(str(grazeScore), width/4.5, -height/4.08);
+  fill('white');
+  textFont(font);
+  textSize(26);
+  noStroke();
+  text(str(grazeScore), width/4.5, -height/4.02);
+  // health score (3rd num)
+  fill('black');
+  textFont(font);
+  textSize(26);
+  noStroke();
+  text(str(lives), width/4.5, -height/6.6);
+  fill('white');
+  textFont(font);
+  textSize(26);
+  noStroke();
+  text(str(lives), width/4.5, -height/6.47);
 }
 
 function enemyAttackFromType(type,x,y,dir,speed) {
@@ -468,14 +527,14 @@ function enemyAttackFromType(type,x,y,dir,speed) {
 
 function playerFireBullet() {
   if (shootingCooldown <= 0) {
-    //0-19
-    if (powerScore < 20) {
+    //0-39
+    if (powerScore < 40) {
       //first level of power
       shootingCooldown = 10;
       createPlayerBullet(playerX,playerY,-90,60);
     }
-    //20-39
-    else if (powerScore < 40) {
+    //40-79
+    else if (true) {//(powerScore < 80) {
       //second level of power
       shootingCooldown = 12;
       createPlayerBullet(playerX,playerY,-90,70);
@@ -523,19 +582,45 @@ function createPickup(pickup,x,y,speed,radius,type,sendToPlayer) {
 
 function runState() {
   if (state === 'menu') {
-    playTrack();
+    //NO MUSIC!
+    //playTrack();
+    image(infoImage,0,0,width,height);
+    if (mouseIsPressed) {
+      state = 'game';
+    }
   }
   if (state === 'game') {
     updateObjects();
     drawPlayer();
-    drawStage();
     showStatNumbers();
+
+    if (flashBackgroundAlpha > 0) {
+      fill(255,255,255,flashBackgroundAlpha);
+      rect(-width/2,-height/2,width,height);
+      flashBackgroundAlpha -= 40;
+    }
+
+    if (stageSeconds === currentEndStageTime) {
+      stage = 'results';
+    }
+  }
+  if (state === 'results') {
+    image(gradientImage,0,0,width,height);
+    fill('white');
+    textFont(font);
+    textSize(26);
+    noStroke();
+    text(str(powerScore)+'*10 x '+str(grazeScore)+'*100 + '+str(score-1000000000)+'*100',0,0);
+    text('power*10 x graze*100 + score*100',0,-60);
+    let finalScore = powerScore*10*grazeScore*100+(score-1000000000)*100;
+    text('Final score: '+finalScore,0,30);
+    text('Thanks for playing, here is the formula:',0,-90);
   }
 }
 
 function checkFrameCount() {
   //run this every second since game starts
-  if (frameCount % 60 === 1) {
+  if (frameCount % 60 === 1 && state === 'game') {
     seconds++;
     backgroundTimer++;
     //reset at stage start
@@ -553,13 +638,6 @@ function checkFrameCount() {
 }
 
 function updateObjects() {
-  for (let hitbox of hitboxArray) {
-    hitbox.move();
-    hitbox.checkForCollision();
-    if (drawHitboxes) {
-      hitbox.draw();
-    }
-  }
   for (let pickup of pickupArray) {
     //lazy
     if (true) {
@@ -585,14 +663,21 @@ function updateObjects() {
       bullet.draw();
     }
   }
+  for (let hitbox of hitboxArray) {
+    hitbox.move();
+    hitbox.checkForCollision();
+    if (drawHitboxes) {
+      hitbox.draw();
+    }
+  }
 }
 
 function playTrack(track) {
-
+  //intended to play given sound file
 }
 
 function grazeParticle() {
-
+  //intended to show little sparks when grazing a bullet
 }
 
 function pickupParticle() {
@@ -608,14 +693,31 @@ function pickupParticle() {
 }
 
 function drawPlayer() {
-  if (drawHitboxes) {
+  if (playerMoveSpeed === SHIFT_PLAYER_MOVESPEED) {
+    fill(0,0,0,200);
+    circle(playerX,playerY,VISUAL_PLAYER_HITBOX_DIAMETER);
+    fill(255,255,255,200);
+    circle(playerX,playerY,VISUAL_PLAYER_HITBOX_DIAMETER*0.8);
     fill(255,0,0);
     circle(playerX,playerY,PLAYER_HITBOX_DIAMETER);
   }
+  else {
+    fill(0,0,0);
+    circle(playerX,playerY,VISUAL_PLAYER_HITBOX_DIAMETER);
+    fill(255,255,255);
+    circle(playerX,playerY,VISUAL_PLAYER_HITBOX_DIAMETER*0.8);
+  }
 }
 
-function drawStage() {
-
+function playerDamaged() {
+  score = floor((score-1000000000)/3)+1000000000;
+  hitboxArray = [];
+  enemyArray = [];
+  pickupArray = [];
+  playerBulletArray = [];
+  powerScore = 0;
+  flashBackgroundAlpha = 250;
+  lives--;
 }
 
 function readStageInfo() {
@@ -632,6 +734,11 @@ function readStageInfo() {
         //read and set stage number
         textLine = textLine.slice(6);
         stage = int(textLine);
+      }
+      if (textLine.substring(0,8) === "stageEnd:") {
+        //read and set time that stage ends
+        textLine = textLine.slice(9);
+        currentEndStageTime = int(textLine);
       }
       if (textLine === "newEnemy") {
         //create new enemy with info from text

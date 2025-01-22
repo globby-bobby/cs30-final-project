@@ -1,3 +1,5 @@
+//this is a short example level because I was short on time and put it into more important things.
+
 //stage
 stage:2
 //create enemy with a type, time to spawn, position, direction to turn every frame, and speed to move every frame
@@ -187,3 +189,153 @@ newEnemy
     delay:040
     lifetime:150
     origindir:090
+
+//16
+///////
+newEnemy
+    type:002
+    time:019
+    x:-650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:010
+//17
+newEnemy
+    type:002
+    time:019
+    x:0650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:170
+//18
+newEnemy
+    type:002
+    time:020
+    x:-650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:010
+//19
+newEnemy
+    type:002
+    time:020
+    x:0650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:170
+
+//20
+newEnemy
+    type:002
+    time:021
+    x:-650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:010
+//21
+newEnemy
+    type:002
+    time:021
+    x:0650
+    y:-320
+    dir:000
+    speed:003
+    interval:010
+    delay:030
+    lifetime:180
+    origindir:170
+//22
+//straight
+newEnemy
+    type:002
+    time:022
+    x:-650
+    y:-320
+    dir:000
+    speed:003
+    interval:030
+    delay:030
+    lifetime:180
+    origindir:010
+//23
+newEnemy
+    type:002
+    time:022
+    x:0650
+    y:-320
+    dir:000
+    speed:003
+    interval:030
+    delay:030
+    lifetime:180
+    origindir:170
+//24
+newEnemy
+    type:001
+    time:023
+    x:-100
+    y:-380
+    dir:000
+    speed:003
+    interval:030
+    delay:060
+    lifetime:100
+    origindir:090
+//25
+newEnemy
+    type:001
+    time:023
+    x:-300
+    y:-380
+    dir:000
+    speed:003
+    interval:030
+    delay:060
+    lifetime:100
+    origindir:090
+//26
+newEnemy
+    type:001
+    time:023
+    x:-200
+    y:-400
+    dir:001
+    speed:001
+    interval:060
+    delay:060
+    lifetime:100
+    origindir:090
+//27
+newEnemy
+    type:001
+    time:023
+    x:-100
+    y:-400
+    dir:359
+    speed:001
+    interval:060
+    delay:080
+    lifetime:150
+    origindir:090
+
+stageEnd:025
